@@ -49,6 +49,9 @@ function plainTextToHtml(text) {
   function isExplicitUnordered(line) {
     return line.trim().match(/^[-•*]\s+(.+)$/);
   }
+  function hasInlineDefinition(text) {
+    return /^[А-ЯІЇЄҐA-Z][^:<]{1,55}\s*:\s+.+/.test(text.trim());
+  }
   function isStandaloneListLine(line) {
     const trimmed = line.trim();
     if (!trimmed) return false;
@@ -58,6 +61,9 @@ function plainTextToHtml(text) {
     if (/\s[-–—]\s/.test(trimmed)) return false;
     return true;
   }
+  function isAutoNumberedLine(line) {
+    return isStandaloneListLine(line) || hasInlineDefinition(line);
+  }
   function isContinuationBulletLine(line) {
     const trimmed = line.trim();
     if (!trimmed) return false;
@@ -66,10 +72,16 @@ function plainTextToHtml(text) {
     if (/[.!?…]$/.test(trimmed)) return false;
     return true;
   }
+  function nextContentLine(index) {
+    for (let i = index + 1; i < lines.length; i++) {
+      if (lines[i].trim()) return lines[i].trim();
+    }
+    return "";
+  }
   function standaloneRunLength(startIndex) {
     let length = 0;
     for (let i = startIndex; i < lines.length; i++) {
-      if (!isStandaloneListLine(lines[i])) break;
+      if (!isAutoNumberedLine(lines[i])) break;
       length++;
     }
     return length;
@@ -99,7 +111,7 @@ function plainTextToHtml(text) {
   function addListItem(type, itemText) {
     openList(type);
     closeListItem();
-    const content = type === "ol" && isStandaloneListLine(itemText) ? `<strong>${formatInlineText(itemText)}</strong>` : formatInlineText(itemText);
+    const content = type === "ol" && isStandaloneListLine(itemText) && !hasInlineDefinition(itemText) ? `<strong>${formatInlineText(itemText)}</strong>` : formatInlineText(itemText);
     html += `<li>${content}`;
     listItemOpen = true;
   }
@@ -133,6 +145,9 @@ function plainTextToHtml(text) {
     } else if (orderedMatch) {
       closeNestedBulletList();
       addListItem("ol", orderedMatch[1]);
+      if (hasInlineDefinition(orderedMatch[1]) || isExplicitOrdered(nextContentLine(i))) {
+        closeListItem();
+      }
     } else if (unorderedMatch) {
       closeNestedBulletList();
       addListItem("ul", unorderedMatch[1]);
@@ -143,7 +158,7 @@ function plainTextToHtml(text) {
       addListContinuation(line);
     } else if (standaloneRunLength(i) >= 2) {
       openList("ol");
-      while (i < lines.length && isStandaloneListLine(lines[i])) {
+      while (i < lines.length && isAutoNumberedLine(lines[i])) {
         addListItem("ol", lines[i].trim());
         i++;
       }

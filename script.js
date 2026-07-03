@@ -28,13 +28,77 @@ function save() {
 function escapeHtml(text) { return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"); }
 function makeId(name) { return name.toLowerCase().trim().replace(/[^\wа-яіїєґ]+/gi, "-") + "-" + Date.now(); }
 function hasHtml(text) { return /<\/?[a-z][\s\S]*>/i.test(String(text)); }
-function plainTextToHtml(text) {
+function formatInlineText(text) {
   return escapeHtml(text)
-    .replace(/\r\n/g, "\n")
-    .replace(/\n{2,}/g, "</p><p>")
-    .replace(/\n/g, "<br>")
-    .replace(/^/, "<p>")
-    .replace(/$/, "</p>");
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/__(.+?)__/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/_(.+?)_/g, "<em>$1</em>");
+}
+function plainTextToHtml(text) {
+  const lines = String(text || "").replace(/\r\n/g, "\n").split("\n");
+  let html = "";
+  let paragraph = [];
+  let listType = null;
+  let listItemOpen = false;
+
+  function closeParagraph() {
+    if (!paragraph.length) return;
+    html += `<p>${paragraph.map(formatInlineText).join("<br>")}</p>`;
+    paragraph = [];
+  }
+  function closeListItem() {
+    if (!listItemOpen) return;
+    html += "</li>";
+    listItemOpen = false;
+  }
+  function closeList() {
+    if (!listType) return;
+    closeListItem();
+    html += `</${listType}>`;
+    listType = null;
+  }
+  function openList(type) {
+    closeParagraph();
+    if (listType === type) return;
+    closeList();
+    html += `<${type}>`;
+    listType = type;
+  }
+  function addListItem(type, itemText) {
+    openList(type);
+    closeListItem();
+    const content = type === "ol" ? `<strong>${formatInlineText(itemText)}</strong>` : formatInlineText(itemText);
+    html += `<li>${content}`;
+    listItemOpen = true;
+  }
+  function addListContinuation(line) {
+    if (!listItemOpen) return;
+    html += `<br>${formatInlineText(line)}`;
+  }
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+    const orderedMatch = trimmed.match(/^\d+[.)]\s+(.+)$/);
+    const unorderedMatch = trimmed.match(/^[-•*]\s+(.+)$/);
+
+    if (!trimmed) {
+      closeParagraph();
+      closeList();
+    } else if (orderedMatch) {
+      addListItem("ol", orderedMatch[1]);
+    } else if (unorderedMatch) {
+      addListItem("ul", unorderedMatch[1]);
+    } else if (listType) {
+      addListContinuation(line);
+    } else {
+      paragraph.push(line);
+    }
+  });
+
+  closeParagraph();
+  closeList();
+  return html;
 }
 function sanitizeAnswerHtml(html) {
   const template = document.createElement("template");

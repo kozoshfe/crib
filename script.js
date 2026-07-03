@@ -10,6 +10,7 @@ let currentUser = null;
 let syncTimer = null;
 let isHydratingRemote = false;
 let lastRemoteUpdatedAt = null;
+let pendingQuestionJump = null;
 
 const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
@@ -29,6 +30,7 @@ const printBook = document.getElementById("printBook");
 const answerInput = document.getElementById("answerInput");
 const deleteQuestionBtn = document.getElementById("deleteQuestionBtn");
 const syncStatus = document.getElementById("syncStatus");
+const totalQuestionsCount = document.getElementById("totalQuestionsCount");
 const allowedAnswerTags = new Set(["B", "STRONG", "I", "EM", "OL", "UL", "LI", "BR", "P", "DIV"]);
 
 function save() {
@@ -406,6 +408,7 @@ function renderQuestions() {
   if (!list.length) { questionsList.innerHTML = `<div class="empty">Питань ще немає.</div>`; return; }
   list.forEach((q, i) => {
     const article = document.createElement("article"); article.className = "qa";
+    article.dataset.question = q.question;
     const isLearned = q.studyStatus === "learned";
     const isNotLearned = q.studyStatus === "not-learned";
     const questionCategoryName = categories.find(cat => cat.id === q.categoryId)?.name || "Без категорії";
@@ -433,6 +436,22 @@ function renderQuestions() {
     article.oncontextmenu = (e) => { e.preventDefault(); const action = prompt("Напиши: edit або delete", "edit"); if (action === "edit") openEditQuestion(q.index); if (action === "delete") deleteQuestion(q.index); };
     questionsList.appendChild(article);
   });
+}
+function applyQuestionDeepLink() {
+  if (!pendingQuestionJump) return;
+  const targetQuestion = pendingQuestionJump.question;
+  pendingQuestionJump = null;
+
+  requestAnimationFrame(() => {
+    const target = Array.from(document.querySelectorAll(".qa")).find(article => article.dataset.question === targetQuestion);
+    if (!target) return;
+    target.classList.add("jump-highlight");
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => target.classList.remove("jump-highlight"), 2400);
+  });
+}
+function renderStats() {
+  totalQuestionsCount.textContent = questions.length;
 }
 function buildCategoriesHtml(forcePageBreaks = false) {
   let html = "";
@@ -589,7 +608,7 @@ function applyCloudState(state) {
 }
 function humanizeSupabaseError(error) {
   const message = String(error?.message || "невідома помилка");
-  if (message.includes("relation") && message.includes("does not exist")) return "Створи таблицю qa_handbook_state у Supabase";
+  if (message.includes("relation") && message.includes("does not exist")) return "Не знайдена таблиця qa_handbook_state у Supabase";
   if (message.toLowerCase().includes("row-level security")) return "Перевір RLS policies для qa_handbook_state";
   return message;
 }
@@ -788,7 +807,7 @@ async function initSupabase() {
 
   await handleAuthSession(session);
 }
-function render() { renderCategories(); renderQuestions(); buildPrintBook(); }
+function render() { renderStats(); renderCategories(); renderQuestions(); buildPrintBook(); applyQuestionDeepLink(); }
 
 document.getElementById("addCategoryBtn").onclick = () => { const name = prompt("Назва категорії:"); if (!name || !name.trim()) return; const id = makeId(name); categories.push({ id, name: name.trim() }); activeCategoryId = id; save(); render(); };
 function openNewQuestion() { editingIndex = null; document.getElementById("questionModalTitle").textContent = "Нове питання"; questionCategory.value = activeCategoryId; document.getElementById("questionInput").value = ""; setEditorHtml(""); deleteQuestionBtn.classList.add("hidden"); document.getElementById("questionModal").classList.remove("hidden"); focusEditor(); }
@@ -823,6 +842,20 @@ clearSearchBtn.onclick = () => { search.value = ""; toggleClearSearch(); renderQ
 showLearnedBtn.onclick = () => setStudyFilter("learned");
 showNotLearnedBtn.onclick = () => setStudyFilter("not-learned");
 document.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") { e.preventDefault(); openNewQuestion(); } });
+function initQuestionDeepLink() {
+  const params = new URLSearchParams(window.location.search);
+  const categoryId = params.get("category");
+  const question = params.get("question");
+  if (!categoryId || !question) return;
+  if (categories.some(category => category.id === categoryId)) {
+    activeCategoryId = categoryId;
+    activeStudyFilter = "";
+    search.value = "";
+    saveActiveCategory();
+  }
+  pendingQuestionJump = { question };
+}
+initQuestionDeepLink();
 toggleClearSearch();
 updateStudyFilterButtons();
 updateSaveButtonState();

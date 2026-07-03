@@ -4,6 +4,22 @@ create table if not exists public.qa_handbook_state (
   updated_at timestamptz not null default now()
 );
 
+create or replace function public.qa_handbook_set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists qa_handbook_state_set_updated_at on public.qa_handbook_state;
+create trigger qa_handbook_state_set_updated_at
+before update on public.qa_handbook_state
+for each row
+execute function public.qa_handbook_set_updated_at();
+
 alter table public.qa_handbook_state enable row level security;
 
 drop policy if exists "Authenticated users can read QA handbook" on public.qa_handbook_state;

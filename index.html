@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QA Handbook</title>
-  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="style.css?v=7" />
 </head>
 <body>
   <div id="authScreen" class="auth-screen hidden">
@@ -26,24 +26,35 @@
       <input id="search" class="search" placeholder="Пошук..." />
       <button id="clearSearchBtn" class="clear-search hidden" type="button" aria-label="Очистити пошук" title="Очистити пошук">×</button>
     </div>
+    <div class="question-stats" aria-label="Статистика питань">
+      <div><span id="totalQuestionsCount">0</span><small>Всього запитань</small></div>
+    </div>
     <div class="status-filters" aria-label="Фільтр за статусом">
       <button id="showLearnedBtn" class="status-filter learned-filter" type="button">✓ Вивчено</button>
       <button id="showNotLearnedBtn" class="status-filter not-learned-filter" type="button">× Не вивчено</button>
     </div>
     <nav id="categoryList" class="category-list"></nav>
     <div class="actions">
-      <button id="addCategoryBtn">+ Категорія</button>
-      <button id="addQuestionBtn">+ Питання</button>
-      <button id="printBookBtn">PDF</button>
-      <button id="exportWordBtn">Word</button>
-      <button id="syncSupabaseBtn" class="sync-supabase">Зберегти</button>
-      <button id="logoutBtn" class="logout" type="button">Вийти</button>
-      <div id="syncStatus" class="sync-status">Supabase: підключення...</div>
+      <div class="action-group">
+        <div class="action-title">Додати</div>
+        <button id="addCategoryBtn">+ Категорія</button>
+        <button id="addQuestionBtn">+ Питання</button>
+      </div>
+      <div class="action-group">
+        <div class="action-title">Конвертувати</div>
+        <button id="printBookBtn">PDF</button>
+        <button id="exportWordBtn">Word</button>
+      </div>
     </div>
-    <div class="hint">Перетягни категорію — змінити порядок<br>Подвійний клік по питанню — редагувати<br>ПКМ по питанню — edit/delete<br>ПКМ по категорії — rename/delete<br>Для чистого PDF вимкни Headers and footers у вікні друку</div>
   </aside>
 
   <main class="book">
+    <div class="book-toolbar">
+      <div id="syncStatus" class="sync-status hidden" aria-live="polite">Supabase: підключення...</div>
+      <a class="toolbar-link" href="questions.html">Запитання</a>
+      <button id="syncSupabaseBtn" class="sync-supabase">Зберегти</button>
+      <button id="logoutBtn" class="logout" type="button">Вийти</button>
+    </div>
     <h1 id="categoryTitle"></h1>
     <section id="questionsList"></section>
   </main>
@@ -74,6 +85,6 @@
   </div>
 
   <script src="data.js?v=supabase-1"></script>
-  <script src="script.js?v=supabase-6"></script>
+  <script src="script.js?v=supabase-11"></script>
 </body>
 </html>

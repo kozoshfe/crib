@@ -24,6 +24,7 @@ const loginEmail = document.getElementById("loginEmail");
 const loginPassword = document.getElementById("loginPassword");
 const loginMsg = document.getElementById("loginMsg");
 const syncStatus = document.getElementById("syncStatus");
+const syncBtn = document.getElementById("syncBtn");
 const categoryList = document.getElementById("categoryList");
 const categoryTitle = document.getElementById("categoryTitle");
 const questionCategory = document.getElementById("questionCategory");
@@ -52,6 +53,21 @@ function setSyncStatus(text, isError = false) {
   syncStatus.textContent = text;
   syncStatus.style.color = isError ? "#dc2626" : "#6b7280";
 }
+function hasLocalChanges() {
+  return Boolean(localStorage.getItem(LOCAL_CATEGORIES_KEY) || localStorage.getItem(LOCAL_QUESTIONS_KEY));
+}
+function updateSaveButtonState(state = "") {
+  if (!syncBtn) return;
+
+  syncBtn.classList.remove("dirty", "success", "error", "saving");
+  if (state) syncBtn.classList.add(state);
+  else syncBtn.classList.add(hasLocalChanges() ? "dirty" : "success");
+
+  if (state === "saving") syncBtn.textContent = "Збереження...";
+  else if (state === "error") syncBtn.textContent = "Помилка";
+  else if (state === "success" || !hasLocalChanges()) syncBtn.textContent = "Синхронізовано";
+  else syncBtn.textContent = "Не збережено";
+}
 function showAuthScreen() {
   authScreen.classList.remove("hidden");
   document.querySelector(".sidebar")?.classList.add("hidden");
@@ -70,9 +86,11 @@ function saveLocal() {
 function clearLocal() {
   localStorage.removeItem(LOCAL_CATEGORIES_KEY);
   localStorage.removeItem(LOCAL_QUESTIONS_KEY);
+  updateSaveButtonState();
 }
 function save() {
   saveLocal();
+  updateSaveButtonState();
   scheduleSync();
   render();
 }
@@ -197,10 +215,12 @@ async function hydrateFromSupabase() {
     }
 
     setSyncStatus("Supabase: готово");
+    updateSaveButtonState("success");
     return true;
   } catch (error) {
     console.error(error);
     setSyncStatus("Supabase: " + humanizeSupabaseError(error), true);
+    updateSaveButtonState("error");
     return false;
   }
 }
@@ -211,13 +231,17 @@ function scheduleSync() {
 }
 async function syncToSupabase() {
   if (!currentUser) {
+    updateSaveButtonState("error");
     setSyncStatus("Supabase: увійди в акаунт", true);
     showAuthScreen();
     return;
   }
 
+  if (syncBtn) syncBtn.disabled = true;
+  updateSaveButtonState("saving");
+  setSyncStatus("Supabase: збереження...");
+
   try {
-    setSyncStatus("Supabase: збереження...");
     const remote = await loadRemoteState();
     const remoteUpdatedAt = remote?.state?.updatedAt || remote?.updated_at || null;
     if (
@@ -233,6 +257,7 @@ async function syncToSupabase() {
       isHydratingRemote = false;
       render();
       setSyncStatus("Supabase: підтягнув новіші дані");
+      updateSaveButtonState("success");
       return;
     }
 
@@ -241,9 +266,14 @@ async function syncToSupabase() {
     lastRemoteUpdatedAt = state.updatedAt;
     clearLocal();
     setSyncStatus("Supabase: збережено");
+    updateSaveButtonState("success");
   } catch (error) {
     console.error(error);
     setSyncStatus("Supabase: " + humanizeSupabaseError(error), true);
+    updateSaveButtonState("error");
+    setTimeout(() => updateSaveButtonState(), 3000);
+  } finally {
+    if (syncBtn) syncBtn.disabled = false;
   }
 }
 async function handleSession(session) {
@@ -460,7 +490,7 @@ function addCategory() {
 
 document.getElementById("loginBtn").addEventListener("click", login);
 document.getElementById("logoutBtn").addEventListener("click", logout);
-document.getElementById("syncBtn").addEventListener("click", syncToSupabase);
+syncBtn.addEventListener("click", syncToSupabase);
 document.getElementById("addCategoryBtn").addEventListener("click", addCategory);
 document.getElementById("addQuestionBtn").addEventListener("click", openNewQuestion);
 document.getElementById("saveQuestionBtn").addEventListener("click", saveQuestionFromModal);
@@ -508,5 +538,6 @@ questionsList.addEventListener("contextmenu", event => {
 });
 
 toggleClearSearch();
+updateSaveButtonState();
 render();
 handleSession(loadSession());

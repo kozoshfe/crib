@@ -25,6 +25,12 @@ button { border: 0; border-radius: 8px; background: #111827; color: #fff; paddin
 button:hover { background: #1f2937; }
 .sync-supabase { background: #16a34a; }
 .sync-supabase:hover { background: #15803d; }
+.sync-supabase.saving { background: #2563eb; cursor: wait; }
+.sync-supabase.saving:hover { background: #1d4ed8; }
+.sync-supabase.success { background: #16a34a; }
+.sync-supabase.success:hover { background: #15803d; }
+.sync-supabase.error, .sync-supabase.dirty { background: #dc2626; }
+.sync-supabase.error:hover, .sync-supabase.dirty:hover { background: #b91c1c; }
 .logout { background: #f3f4f6; color: #111827; }
 .logout:hover { background: #e5e7eb; }
 .sync-status { color: #6b7280; font-size: 12px; line-height: 1.35; min-height: 16px; }

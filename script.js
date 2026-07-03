@@ -6,6 +6,16 @@ let questionClickTimer = null;
 let draggedCategoryId = null;
 let categoryDragMoved = false;
 let activeStudyFilter = "";
+let currentUser = null;
+let syncTimer = null;
+let isHydratingRemote = false;
+let lastRemoteUpdatedAt = null;
+
+const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
+const SUPABASE_TABLE = "qa_handbook_state";
+const SUPABASE_ROW_ID = "qa-handbook-main";
+const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
 
 const categoryList = document.getElementById("categoryList");
 const questionsList = document.getElementById("questionsList");
@@ -18,6 +28,7 @@ const showNotLearnedBtn = document.getElementById("showNotLearnedBtn");
 const printBook = document.getElementById("printBook");
 const answerInput = document.getElementById("answerInput");
 const deleteQuestionBtn = document.getElementById("deleteQuestionBtn");
+const syncStatus = document.getElementById("syncStatus");
 const allowedAnswerTags = new Set(["B", "STRONG", "I", "EM", "OL", "UL", "LI", "BR", "P", "DIV"]);
 
 function save() {
@@ -25,6 +36,7 @@ function save() {
   localStorage.setItem("qaShpargalkaQuestions", JSON.stringify(questions));
   localStorage.setItem("qaShpargalkaActive", activeCategoryId);
   updateSaveButtonState();
+  scheduleSupabaseSync();
 }
 function saveActiveCategory() {
   localStorage.setItem("qaShpargalkaActive", activeCategoryId);
@@ -522,9 +534,6 @@ function exportDataJs() {
   const content = `window.PREFILLED_CATEGORIES = ${JSON.stringify(categories, null, 2)};\n\nwindow.PREFILLED_QUESTIONS = ${JSON.stringify(questions, null, 2)};\n`;
   downloadFile("data.js", content, "text/javascript;charset=utf-8");
 }
-function buildDataJsContent() {
-  return `window.PREFILLED_CATEGORIES = ${JSON.stringify(categories, null, 2)};\n\nwindow.PREFILLED_QUESTIONS = ${JSON.stringify(questions, null, 2)};\n`;
-}
 function clearSavedLocalData() {
   localStorage.removeItem("qaShpargalkaCategories");
   localStorage.removeItem("qaShpargalkaQuestions");
@@ -535,7 +544,7 @@ function hasLocalChanges() {
   return Boolean(localStorage.getItem("qaShpargalkaCategories") || localStorage.getItem("qaShpargalkaQuestions"));
 }
 function updateSaveButtonState(state = "") {
-  const button = document.getElementById("syncGithubBtn");
+  const button = document.getElementById("syncSupabaseBtn");
   if (!button) return;
 
   button.classList.remove("dirty", "success", "error", "saving");
@@ -547,68 +556,237 @@ function updateSaveButtonState(state = "") {
   else if (state === "success" || !hasLocalChanges()) button.textContent = "Синхронізовано";
   else button.textContent = "Не збережено";
 }
-async function syncDataToGithub() {
-  const button = document.getElementById("syncGithubBtn");
+function setSyncStatus(text, isError = false) {
+  if (!syncStatus) return;
+  syncStatus.textContent = text;
+  syncStatus.style.color = isError ? "#dc2626" : "#6b7280";
+}
+function showAuthScreen() {
+  document.getElementById("authScreen")?.classList.remove("hidden");
+  document.querySelector(".sidebar")?.classList.add("hidden");
+  document.querySelector(".book")?.classList.add("hidden");
+}
+function showApp() {
+  document.getElementById("authScreen")?.classList.add("hidden");
+  document.querySelector(".sidebar")?.classList.remove("hidden");
+  document.querySelector(".book")?.classList.remove("hidden");
+}
+function getCloudState() {
+  return {
+    categories,
+    questions,
+    activeCategoryId,
+    updatedAt: new Date().toISOString()
+  };
+}
+function applyCloudState(state) {
+  if (!state || !Array.isArray(state.categories) || !Array.isArray(state.questions)) return false;
+  categories = state.categories;
+  questions = state.questions;
+  activeCategoryId = state.activeCategoryId || categories[0]?.id || "";
+  localStorage.setItem("qaShpargalkaActive", activeCategoryId);
+  return true;
+}
+function humanizeSupabaseError(error) {
+  const message = String(error?.message || "невідома помилка");
+  if (message.includes("relation") && message.includes("does not exist")) return "Створи таблицю qa_handbook_state у Supabase";
+  if (message.toLowerCase().includes("row-level security")) return "Перевір RLS policies для qa_handbook_state";
+  return message;
+}
+function saveSupabaseSession(session) {
+  if (session?.access_token) localStorage.setItem(SUPABASE_SESSION_KEY, JSON.stringify(session));
+}
+function loadSupabaseSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem(SUPABASE_SESSION_KEY) || "null");
+    if (!session?.access_token) return null;
+    return session;
+  } catch (error) {
+    return null;
+  }
+}
+function clearSupabaseSession() {
+  localStorage.removeItem(SUPABASE_SESSION_KEY);
+}
+async function supabaseJson(path, options = {}) {
+  const session = loadSupabaseSession();
+  const headers = {
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
+    ...options.headers
+  };
 
-  if (!hasLocalChanges()) {
-    updateSaveButtonState("success");
-    alert("Все вже синхронізовано. Локальних незбережених змін немає.");
+  if (options.body !== undefined) headers["Content-Type"] = "application/json";
+
+  const response = await fetch(`${SUPABASE_URL}${path}`, {
+    method: options.method || "GET",
+    headers,
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined
+  });
+
+  if (!response.ok) {
+    const details = await response.json().catch(() => ({}));
+    throw new Error(details.message || `Supabase request failed (${response.status})`);
+  }
+
+  if (response.status === 204) return null;
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+async function loadRemoteState() {
+  const query = `/rest/v1/${SUPABASE_TABLE}?id=eq.${encodeURIComponent(SUPABASE_ROW_ID)}&select=state,updated_at`;
+  const rows = await supabaseJson(query, { headers: { "Accept": "application/json" } });
+  return Array.isArray(rows) ? rows[0] : null;
+}
+async function upsertRemoteState(state) {
+  return await supabaseJson(`/rest/v1/${SUPABASE_TABLE}?on_conflict=id`, {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Prefer": "resolution=merge-duplicates,return=minimal"
+    },
+    body: { id: SUPABASE_ROW_ID, state, updated_at: state.updatedAt }
+  });
+}
+async function authLogin() {
+  const email = document.getElementById("simpleLogin")?.value.trim();
+  const password = document.getElementById("simplePassword")?.value;
+  const msg = document.getElementById("simpleLoginMsg");
+  if (msg) msg.textContent = "";
+
+  if (!email || !password) {
+    if (msg) msg.textContent = "Введи email і пароль";
     return;
   }
 
-  const token = prompt("Встав GitHub token з правом Contents: Read and write. Він не зберігається в браузері.");
-  if (!token || !token.trim()) return;
-
-  if (!confirm("Оновити data.js у GitHub репозиторії kozoshfe/crib і після успіху очистити localStorage?")) return;
-
-  button.disabled = true;
-  updateSaveButtonState("saving");
+  try {
+    const session = await supabaseJson("/auth/v1/token?grant_type=password", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: { email, password }
+    });
+    saveSupabaseSession(session);
+    await handleAuthSession(session);
+  } catch (error) {
+    if (msg) msg.textContent = "Помилка входу: " + humanizeSupabaseError(error);
+  }
+}
+async function authLogout() {
+  clearSupabaseSession();
+  currentUser = null;
+  showAuthScreen();
+}
+function bindAuthUI() {
+  document.getElementById("simpleLoginBtn")?.addEventListener("click", authLogin);
+  document.getElementById("logoutBtn")?.addEventListener("click", authLogout);
+  ["simpleLogin", "simplePassword"].forEach(id => {
+    document.getElementById(id)?.addEventListener("keydown", event => {
+      if (event.key === "Enter") authLogin();
+    });
+  });
+}
+async function hydrateFromSupabase() {
+  if (!currentUser) return false;
 
   try {
-    save();
-    const owner = "kozoshfe";
-    const repo = "crib";
-    const branch = "main";
-    const path = "data.js";
-    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
-    const headers = {
-      "Accept": "application/vnd.github+json",
-      "Authorization": `Bearer ${token.trim()}`,
-      "X-GitHub-Api-Version": "2022-11-28"
-    };
+    setSyncStatus("Supabase: завантаження...");
+    const data = await loadRemoteState();
 
-    const currentResponse = await fetch(`${apiUrl}?ref=${branch}`, { headers });
-    if (!currentResponse.ok) throw new Error(`Не вдалося прочитати data.js з GitHub (${currentResponse.status})`);
-    const currentFile = await currentResponse.json();
-
-    const content = buildDataJsContent();
-    const encodedContent = btoa(unescape(encodeURIComponent(content)));
-    const updateResponse = await fetch(apiUrl, {
-      method: "PUT",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        message: "Update QA Handbook data",
-        content: encodedContent,
-        sha: currentFile.sha,
-        branch
-      })
-    });
-
-    if (!updateResponse.ok) {
-      const details = await updateResponse.json().catch(() => ({}));
-      throw new Error(details.message || `GitHub update failed (${updateResponse.status})`);
+    if (data?.state && applyCloudState(data.state)) {
+      isHydratingRemote = true;
+      lastRemoteUpdatedAt = data.state.updatedAt || data.updated_at || null;
+      clearSavedLocalData();
+      isHydratingRemote = false;
+      render();
+    } else if (hasLocalChanges() || questions.length) {
+      await syncDataToSupabase();
     }
 
+    setSyncStatus("Supabase: готово");
+    updateSaveButtonState("success");
+    return true;
+  } catch (error) {
+    console.error("Supabase load failed", error);
+    setSyncStatus("Supabase: " + humanizeSupabaseError(error), true);
+    updateSaveButtonState("error");
+    return false;
+  }
+}
+function scheduleSupabaseSync() {
+  if (!currentUser || isHydratingRemote) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(syncDataToSupabase, 700);
+}
+async function syncDataToSupabase() {
+  const button = document.getElementById("syncSupabaseBtn");
+  if (!currentUser) {
+    updateSaveButtonState("error");
+    setSyncStatus("Supabase: увійди в акаунт", true);
+    showAuthScreen();
+    return;
+  }
+
+  if (button) button.disabled = true;
+  updateSaveButtonState("saving");
+  setSyncStatus("Supabase: збереження...");
+
+  try {
+    const remote = await loadRemoteState();
+
+    const remoteUpdatedAt = remote?.state?.updatedAt || remote?.updated_at || null;
+    if (
+      remote?.state &&
+      remoteUpdatedAt &&
+      lastRemoteUpdatedAt &&
+      new Date(remoteUpdatedAt).getTime() > new Date(lastRemoteUpdatedAt).getTime()
+    ) {
+      isHydratingRemote = true;
+      applyCloudState(remote.state);
+      lastRemoteUpdatedAt = remoteUpdatedAt;
+      clearSavedLocalData();
+      isHydratingRemote = false;
+      render();
+      setSyncStatus("Supabase: підтягнув новіші дані");
+      return;
+    }
+
+    const state = getCloudState();
+    await upsertRemoteState(state);
+
+    lastRemoteUpdatedAt = state.updatedAt;
     clearSavedLocalData();
     updateSaveButtonState("success");
-    alert("Готово: data.js оновлено на GitHub, localStorage очищено. GitHub Pages може оновлювати сайт 1-2 хвилини.");
-    setTimeout(() => location.reload(), 1200);
+    setSyncStatus("Supabase: збережено");
   } catch (error) {
+    console.error("Supabase save failed", error);
     updateSaveButtonState("error");
-    alert(`Не вдалося синхронізувати GitHub: ${error.message}`);
-    button.disabled = false;
+    setSyncStatus("Supabase: " + humanizeSupabaseError(error), true);
     setTimeout(() => updateSaveButtonState(), 3000);
+  } finally {
+    if (button) button.disabled = false;
   }
+}
+async function handleAuthSession(session) {
+  currentUser = session?.user || null;
+  if (!currentUser) {
+    showAuthScreen();
+    return;
+  }
+  showApp();
+  setSyncStatus(`Supabase: ${currentUser.email || "online"}`);
+  await hydrateFromSupabase();
+}
+async function initSupabase() {
+  setSyncStatus("Supabase: ініціалізація...");
+  bindAuthUI();
+  const session = loadSupabaseSession();
+  if (!session) {
+    setSyncStatus("Supabase: очікує вхід");
+    showAuthScreen();
+    return;
+  }
+
+  await handleAuthSession(session);
 }
 function render() { renderCategories(); renderQuestions(); buildPrintBook(); }
 
@@ -618,7 +796,7 @@ function openEditQuestion(index) { editingIndex = index; const q = questions[ind
 document.getElementById("addQuestionBtn").addEventListener("click", openNewQuestion);
 document.getElementById("printBookBtn").addEventListener("click", printFullBook);
 document.getElementById("exportWordBtn").addEventListener("click", exportToWord);
-document.getElementById("syncGithubBtn").addEventListener("click", syncDataToGithub);
+document.getElementById("syncSupabaseBtn").addEventListener("click", syncDataToSupabase);
 document.getElementById("closeQuestionModal").addEventListener("click", () => document.getElementById("questionModal").classList.add("hidden"));
 document.querySelectorAll(".editor-toolbar button").forEach(button => {
   button.addEventListener("mousedown", e => e.preventDefault());
@@ -649,3 +827,11 @@ toggleClearSearch();
 updateStudyFilterButtons();
 updateSaveButtonState();
 render();
+setSyncStatus("Supabase: перевірка входу...");
+setTimeout(() => {
+  initSupabase().catch(error => {
+    console.error(error);
+    setSyncStatus("Supabase: помилка ініціалізації", true);
+    showAuthScreen();
+  });
+}, 0);

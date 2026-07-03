@@ -7,6 +7,19 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div id="authScreen" class="auth-screen hidden">
+    <div class="auth-card">
+      <h2>Вхід у QA Handbook</h2>
+      <p class="auth-note">Увійди через Supabase Authentication. Після входу дані підтягнуться автоматично.</p>
+      <label>Email</label>
+      <input id="simpleLogin" type="email" placeholder="you@example.com" autocomplete="email" />
+      <label>Пароль</label>
+      <input id="simplePassword" type="password" placeholder="Введи пароль" autocomplete="current-password" />
+      <button id="simpleLoginBtn" class="primary" type="button">Увійти</button>
+      <div id="simpleLoginMsg" class="auth-note"></div>
+    </div>
+  </div>
+
   <aside class="sidebar">
     <div class="brand">QA Handbook</div>
     <div class="search-wrap">
@@ -23,7 +36,9 @@
       <button id="addQuestionBtn">+ Питання</button>
       <button id="printBookBtn">PDF</button>
       <button id="exportWordBtn">Word</button>
-      <button id="syncGithubBtn" class="sync-github">Зберегти</button>
+      <button id="syncSupabaseBtn" class="sync-supabase">Зберегти</button>
+      <button id="logoutBtn" class="logout" type="button">Вийти</button>
+      <div id="syncStatus" class="sync-status">Supabase: підключення...</div>
     </div>
     <div class="hint">Перетягни категорію — змінити порядок<br>Подвійний клік по питанню — редагувати<br>ПКМ по питанню — edit/delete<br>ПКМ по категорії — rename/delete<br>Для чистого PDF вимкни Headers and footers у вікні друку</div>
   </aside>
@@ -58,7 +73,7 @@
     </div>
   </div>
 
-  <script src="data.js"></script>
-  <script src="script.js"></script>
+  <script src="data.js?v=supabase-1"></script>
+  <script src="script.js?v=supabase-6"></script>
 </body>
 </html>

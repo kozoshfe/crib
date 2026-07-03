@@ -45,6 +45,9 @@ function escapeHtml(text) {
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
 }
+function escapeAttr(text) {
+  return escapeHtml(text).replaceAll('"', "&quot;");
+}
 function makeId(prefix, text = "") {
   const slug = String(text || prefix).toLowerCase().trim().replace(/[^\wа-яіїєґ]+/gi, "-").replace(/^-|-$/g, "");
   return `${prefix}-${slug || "item"}-${Date.now()}`;
@@ -369,29 +372,48 @@ function renderQuestions() {
   }).join("");
 }
 function renderCoverageSelect(item) {
-  const options = MAIN_CATEGORIES.map(category => {
+  const selectedLabel = getCoverageLabel(item.coveredBy);
+  const groups = MAIN_CATEGORIES.map(category => {
     const categoryQuestions = MAIN_QUESTIONS.filter(question => question.categoryId === category.id);
     if (!categoryQuestions.length) return "";
     const questionOptions = categoryQuestions.map(question => {
       const value = `${category.id}::${question.question}`;
       const selected = item.coveredBy === value ? " selected" : "";
-      return `<option value="${escapeHtml(value)}"${selected}>${escapeHtml(question.question)}</option>`;
+      return `<button class="coverage-option${selected}" type="button" data-action="coverage-option" data-id="${escapeAttr(item.id)}" data-value="${escapeAttr(value)}">${escapeHtml(question.question)}</button>`;
     }).join("");
-    return `<optgroup label="${escapeHtml(category.name)}">${questionOptions}</optgroup>`;
+    return `
+      <div class="coverage-group">
+        <div class="coverage-group-title">${escapeHtml(category.name)}</div>
+        ${questionOptions}
+      </div>
+    `;
   }).join("");
 
   return `
     <div class="coverage-picker">
       <label>Покрито в головному handbook</label>
       <div class="coverage-row">
-        <select data-action="coverage" data-id="${item.id}">
-          <option value="">Вибери пункт...</option>
-          ${options}
-        </select>
+        <div class="coverage-combobox" data-id="${escapeAttr(item.id)}">
+          <button class="coverage-trigger" type="button" data-action="coverage-toggle" data-id="${escapeAttr(item.id)}">
+            <span>${escapeHtml(selectedLabel || "Вибери пункт...")}</span>
+          </button>
+          <div class="coverage-menu hidden">
+            <input class="coverage-search" data-action="coverage-search" data-id="${escapeAttr(item.id)}" placeholder="Пошук відповіді..." />
+            <button class="coverage-clear" type="button" data-action="coverage-option" data-id="${escapeAttr(item.id)}" data-value="">Без прив'язки</button>
+            <div class="coverage-options">${groups}</div>
+            <div class="coverage-empty hidden">Нічого не знайдено</div>
+          </div>
+        </div>
         ${item.coveredBy ? `<a class="answer-link" href="${escapeHtml(getCoverageUrl(item.coveredBy))}">Відкрити відповідь</a>` : ""}
       </div>
     </div>
   `;
+}
+function getCoverageLabel(coveredBy) {
+  const [categoryId, questionText] = String(coveredBy || "").split("::");
+  if (!categoryId || !questionText) return "";
+  const categoryName = MAIN_CATEGORIES.find(category => category.id === categoryId)?.name;
+  return categoryName ? `${categoryName}: ${questionText}` : questionText;
 }
 function getCoverageUrl(coveredBy) {
   const [categoryId, question] = String(coveredBy || "").split("::");
@@ -455,6 +477,33 @@ function setCoverage(id, coveredBy) {
   questions = questions.map(item => item.id === id ? { ...item, coveredBy } : item);
   save();
 }
+function closeCoverageMenus(except = null) {
+  document.querySelectorAll(".coverage-combobox").forEach(combo => {
+    if (except && combo === except) return;
+    combo.querySelector(".coverage-menu")?.classList.add("hidden");
+  });
+}
+function filterCoverageOptions(input) {
+  const menu = input.closest(".coverage-menu");
+  if (!menu) return;
+  const query = input.value.toLowerCase().trim();
+  let visibleCount = 0;
+
+  menu.querySelectorAll(".coverage-group").forEach(group => {
+    let groupVisible = false;
+    group.querySelectorAll(".coverage-option").forEach(option => {
+      const matches = option.textContent.toLowerCase().includes(query);
+      option.classList.toggle("hidden", !matches);
+      if (matches) {
+        groupVisible = true;
+        visibleCount += 1;
+      }
+    });
+    group.classList.toggle("hidden", !groupVisible);
+  });
+
+  menu.querySelector(".coverage-empty")?.classList.toggle("hidden", visibleCount > 0);
+}
 function deleteQuestion(id) {
   if (!confirm("Видалити питання?")) return;
   questions = questions.filter(item => item.id !== id);
@@ -514,8 +563,32 @@ clearSearchBtn.addEventListener("click", () => {
   });
 });
 questionsList.addEventListener("click", event => {
+  const coverageToggle = event.target.closest("[data-action='coverage-toggle']");
+  const coverageOption = event.target.closest("[data-action='coverage-option']");
   const button = event.target.closest("button[data-action]");
   const card = event.target.closest(".question-card");
+  if (coverageToggle) {
+    const combo = coverageToggle.closest(".coverage-combobox");
+    const menu = combo?.querySelector(".coverage-menu");
+    if (!combo || !menu) return;
+    const willOpen = menu.classList.contains("hidden");
+    closeCoverageMenus(combo);
+    menu.classList.toggle("hidden", !willOpen);
+    if (willOpen) {
+      const input = menu.querySelector(".coverage-search");
+      if (input) {
+        input.value = "";
+        filterCoverageOptions(input);
+        setTimeout(() => input.focus(), 0);
+      }
+    }
+    return;
+  }
+  if (coverageOption) {
+    setCoverage(coverageOption.dataset.id, coverageOption.dataset.value || "");
+    return;
+  }
+  if (event.target.closest(".coverage-combobox")) return;
   if (button) {
     const id = button.dataset.id;
     if (button.dataset.action === "done") toggleDone(id);
@@ -527,6 +600,15 @@ questionsList.addEventListener("change", event => {
   const select = event.target.closest("select[data-action='coverage']");
   if (!select) return;
   setCoverage(select.dataset.id, select.value);
+});
+questionsList.addEventListener("input", event => {
+  const input = event.target.closest("[data-action='coverage-search']");
+  if (!input) return;
+  filterCoverageOptions(input);
+});
+document.addEventListener("click", event => {
+  if (event.target.closest(".coverage-combobox")) return;
+  closeCoverageMenus();
 });
 questionsList.addEventListener("contextmenu", event => {
   const card = event.target.closest(".question-card");

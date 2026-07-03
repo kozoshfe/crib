@@ -42,8 +42,9 @@ body { margin: 0; background: #fbfaf7; color: #111827; font-family: Georgia, "Ti
 .qa-answer ol { margin: 8px 0 14px; padding-left: 0; counter-reset: answer-list; list-style: none; }
 .qa-answer ul { margin: 8px 0 14px 26px; padding-left: 22px; }
 .qa-answer li { margin: 4px 0; padding-left: 4px; }
-.qa-answer ol > li { counter-increment: answer-list; padding-left: 0; text-indent: 26px; }
+.qa-answer ol > li { counter-increment: answer-list; padding-left: 0; text-indent: 26px; font-weight: 400; }
 .qa-answer ol > li::before { content: counter(answer-list) ". "; font-weight: 800; }
+.qa-answer ol > li strong { font-weight: 800; }
 .empty { font-size: 17px; color: #6b7280; text-align: center; margin-top: 80px; }
 .print-book { display: none; }
 .print-title { text-align: center; margin-top: 180px; page-break-after: always; }

@@ -89,11 +89,7 @@ function plainTextToHtml(text) {
   function addListItem(type, itemText) {
     openList(type);
     closeListItem();
-    let content = formatInlineText(itemText);
-    if (type === "ol" && !content.startsWith("<strong>")) {
-      content = `<strong>${content}</strong>`;
-    }
-    html += `<li>${content}`;
+    html += `<li>${formatInlineText(itemText)}`;
     listItemOpen = true;
   }
   function addListContinuation(line) {

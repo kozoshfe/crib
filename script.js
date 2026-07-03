@@ -30,7 +30,7 @@ function makeId(name) { return name.toLowerCase().trim().replace(/[^\wа-яії�
 function hasHtml(text) { return /<\/?[a-z][\s\S]*>/i.test(String(text)); }
 function formatInlineText(text) {
   return escapeHtml(text)
-    .replace(/^([А-ЯІЇЄҐA-Z][^:<]{1,45}?)(\s*[-:]\s*)/, "<strong><em>$1</em></strong>$2")
+    .replace(/^([А-ЯІЇЄҐA-Z][^:<]{1,45}?)(\s*[-–—:]\s*)/, "<strong><em>$1</em></strong>$2")
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/__(.+?)__/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
@@ -70,6 +70,7 @@ function plainTextToHtml(text) {
     if (isExplicitOrdered(trimmed) || isExplicitUnordered(trimmed)) return false;
     if (trimmed.length > 120) return false;
     if (/[.!?…]$/.test(trimmed)) return false;
+    if (/\s[-–—]\s/.test(trimmed)) return false;
     return true;
   }
   function nextContentLine(index) {

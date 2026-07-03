@@ -41,6 +41,7 @@ function plainTextToHtml(text) {
   let html = "";
   let listType = null;
   let listItemOpen = false;
+  let nestedListOpen = false;
 
   function isExplicitOrdered(line) {
     return line.trim().match(/^\d+[.)]\s+(.+)$/);
@@ -57,6 +58,14 @@ function plainTextToHtml(text) {
     if (/\s[-–—]\s/.test(trimmed)) return false;
     return true;
   }
+  function isContinuationBulletLine(line) {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+    if (isExplicitOrdered(trimmed) || isExplicitUnordered(trimmed)) return false;
+    if (trimmed.length > 120) return false;
+    if (/[.!?…]$/.test(trimmed)) return false;
+    return true;
+  }
   function standaloneRunLength(startIndex) {
     let length = 0;
     for (let i = startIndex; i < lines.length; i++) {
@@ -71,6 +80,7 @@ function plainTextToHtml(text) {
   }
   function closeListItem() {
     if (!listItemOpen) return;
+    closeNestedBulletList();
     html += "</li>";
     listItemOpen = false;
   }
@@ -89,12 +99,26 @@ function plainTextToHtml(text) {
   function addListItem(type, itemText) {
     openList(type);
     closeListItem();
-    html += `<li>${formatInlineText(itemText)}`;
+    const content = type === "ol" && isStandaloneListLine(itemText) ? `<strong>${formatInlineText(itemText)}</strong>` : formatInlineText(itemText);
+    html += `<li>${content}`;
     listItemOpen = true;
   }
   function addListContinuation(line) {
     if (!listItemOpen) return;
     html += `<br>${formatInlineText(line)}`;
+  }
+  function addNestedBullet(line) {
+    if (!listItemOpen) return;
+    if (!nestedListOpen) {
+      html += `<ul>`;
+      nestedListOpen = true;
+    }
+    html += `<li>${formatInlineText(line)}</li>`;
+  }
+  function closeNestedBulletList() {
+    if (!nestedListOpen) return;
+    html += "</ul>";
+    nestedListOpen = false;
   }
 
   for (let i = 0; i < lines.length; i++) {
@@ -104,12 +128,18 @@ function plainTextToHtml(text) {
     const unorderedMatch = isExplicitUnordered(line);
 
     if (!trimmed) {
+      closeNestedBulletList();
       closeList();
     } else if (orderedMatch) {
+      closeNestedBulletList();
       addListItem("ol", orderedMatch[1]);
     } else if (unorderedMatch) {
+      closeNestedBulletList();
       addListItem("ul", unorderedMatch[1]);
+    } else if (listType === "ol" && isContinuationBulletLine(line)) {
+      addNestedBullet(line);
     } else if (listType) {
+      closeNestedBulletList();
       addListContinuation(line);
     } else if (standaloneRunLength(i) >= 2) {
       openList("ol");

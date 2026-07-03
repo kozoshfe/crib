@@ -30,6 +30,7 @@ function makeId(name) { return name.toLowerCase().trim().replace(/[^\wа-яії�
 function hasHtml(text) { return /<\/?[a-z][\s\S]*>/i.test(String(text)); }
 function formatInlineText(text) {
   return escapeHtml(text)
+    .replace(/^([А-ЯІЇЄҐA-Z][^:<]{1,45}?)(\s*[-:]\s*)/, "<strong><em>$1</em></strong>$2")
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     .replace(/__(.+?)__/g, "<strong>$1</strong>")
     .replace(/\*(.+?)\*/g, "<em>$1</em>")
@@ -38,14 +39,35 @@ function formatInlineText(text) {
 function plainTextToHtml(text) {
   const lines = String(text || "").replace(/\r\n/g, "\n").split("\n");
   let html = "";
-  let paragraph = [];
   let listType = null;
   let listItemOpen = false;
 
-  function closeParagraph() {
-    if (!paragraph.length) return;
-    html += `<p>${paragraph.map(formatInlineText).join("<br>")}</p>`;
-    paragraph = [];
+  function isExplicitOrdered(line) {
+    return line.trim().match(/^\d+[.)]\s+(.+)$/);
+  }
+  function isExplicitUnordered(line) {
+    return line.trim().match(/^[-•*]\s+(.+)$/);
+  }
+  function isStandaloneListLine(line) {
+    const trimmed = line.trim();
+    if (!trimmed) return false;
+    if (isExplicitOrdered(trimmed) || isExplicitUnordered(trimmed)) return false;
+    if (trimmed.length > 95) return false;
+    if (/[.!?…]$/.test(trimmed)) return false;
+    if (/\s[-–—]\s/.test(trimmed)) return false;
+    return true;
+  }
+  function standaloneRunLength(startIndex) {
+    let length = 0;
+    for (let i = startIndex; i < lines.length; i++) {
+      if (!isStandaloneListLine(lines[i])) break;
+      length++;
+    }
+    return length;
+  }
+  function addParagraph(paragraphLines) {
+    if (!paragraphLines.length) return;
+    html += `<p>${paragraphLines.map(formatInlineText).join("<br>")}</p>`;
   }
   function closeListItem() {
     if (!listItemOpen) return;
@@ -59,7 +81,6 @@ function plainTextToHtml(text) {
     listType = null;
   }
   function openList(type) {
-    closeParagraph();
     if (listType === type) return;
     closeList();
     html += `<${type}>`;
@@ -68,7 +89,10 @@ function plainTextToHtml(text) {
   function addListItem(type, itemText) {
     openList(type);
     closeListItem();
-    const content = type === "ol" ? `<strong>${formatInlineText(itemText)}</strong>` : formatInlineText(itemText);
+    let content = formatInlineText(itemText);
+    if (type === "ol" && !content.startsWith("<strong>")) {
+      content = `<strong>${content}</strong>`;
+    }
     html += `<li>${content}`;
     listItemOpen = true;
   }
@@ -77,13 +101,13 @@ function plainTextToHtml(text) {
     html += `<br>${formatInlineText(line)}`;
   }
 
-  lines.forEach(line => {
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
     const trimmed = line.trim();
-    const orderedMatch = trimmed.match(/^\d+[.)]\s+(.+)$/);
-    const unorderedMatch = trimmed.match(/^[-•*]\s+(.+)$/);
+    const orderedMatch = isExplicitOrdered(line);
+    const unorderedMatch = isExplicitUnordered(line);
 
     if (!trimmed) {
-      closeParagraph();
       closeList();
     } else if (orderedMatch) {
       addListItem("ol", orderedMatch[1]);
@@ -91,12 +115,24 @@ function plainTextToHtml(text) {
       addListItem("ul", unorderedMatch[1]);
     } else if (listType) {
       addListContinuation(line);
+    } else if (standaloneRunLength(i) >= 2) {
+      openList("ol");
+      while (i < lines.length && isStandaloneListLine(lines[i])) {
+        addListItem("ol", lines[i].trim());
+        i++;
+      }
+      i--;
+      closeList();
     } else {
-      paragraph.push(line);
+      const paragraph = [line];
+      while (i + 1 < lines.length && lines[i + 1].trim() && !isExplicitOrdered(lines[i + 1]) && !isExplicitUnordered(lines[i + 1]) && standaloneRunLength(i + 1) < 2) {
+        i++;
+        paragraph.push(lines[i]);
+      }
+      addParagraph(paragraph);
     }
-  });
+  }
 
-  closeParagraph();
   closeList();
   return html;
 }

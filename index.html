@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QA Handbook</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">QA Handbook</div>
+    <div class="search-wrap">
+      <input id="search" class="search" placeholder="Пошук..." />
+      <button id="clearSearchBtn" class="clear-search hidden" type="button" aria-label="Очистити пошук" title="Очистити пошук">×</button>
+    </div>
+    <div class="status-filters" aria-label="Фільтр за статусом">
+      <button id="showLearnedBtn" class="status-filter learned-filter" type="button">✓ Вивчено</button>
+      <button id="showNotLearnedBtn" class="status-filter not-learned-filter" type="button">× Не вивчено</button>
+    </div>
+    <nav id="categoryList" class="category-list"></nav>
+    <div class="actions">
+      <button id="addCategoryBtn">+ Категорія</button>
+      <button id="addQuestionBtn">+ Питання</button>
+      <button id="printBookBtn">PDF</button>
+      <button id="exportWordBtn">Word</button>
+    </div>
+    <div class="hint">Перетягни категорію — змінити порядок<br>Подвійний клік по питанню — редагувати<br>ПКМ по питанню — edit/delete<br>ПКМ по категорії — rename/delete<br>Для чистого PDF вимкни Headers and footers у вікні друку</div>
+  </aside>
+
+  <main class="book">
+    <h1 id="categoryTitle"></h1>
+    <section id="questionsList"></section>
+  </main>
+
+  <section id="printBook" class="print-book"></section>
+
+  <div id="questionModal" class="modal hidden">
+    <div class="modal-box">
+      <button class="close" id="closeQuestionModal">×</button>
+      <h2 id="questionModalTitle">Нове питання</h2>
+      <label>Категорія</label>
+      <select id="questionCategory"></select>
+      <label>Питання</label>
+      <input id="questionInput" placeholder="Наприклад: Що таке REST API?" />
+      <label>Відповідь</label>
+      <div class="editor-toolbar" aria-label="Форматування відповіді">
+        <button type="button" data-command="bold" title="Жирний"><strong>B</strong></button>
+        <button type="button" data-command="italic" title="Курсив"><em>I</em></button>
+        <button type="button" data-command="insertOrderedList" title="Нумерований список">1.</button>
+        <button type="button" data-command="insertUnorderedList" title="Маркований список">•</button>
+      </div>
+      <div id="answerInput" class="rich-editor" contenteditable="true" data-placeholder="Напиши відповідь..."></div>
+      <div class="modal-actions">
+        <button id="saveQuestionBtn" class="primary">Зберегти</button>
+        <button id="deleteQuestionBtn" class="danger hidden">Видалити</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

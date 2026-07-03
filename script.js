@@ -24,6 +24,10 @@ function save() {
   localStorage.setItem("qaShpargalkaCategories", JSON.stringify(categories));
   localStorage.setItem("qaShpargalkaQuestions", JSON.stringify(questions));
   localStorage.setItem("qaShpargalkaActive", activeCategoryId);
+  updateSaveButtonState();
+}
+function saveActiveCategory() {
+  localStorage.setItem("qaShpargalkaActive", activeCategoryId);
 }
 function escapeHtml(text) { return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;"); }
 function makeId(name) { return name.toLowerCase().trim().replace(/[^\wа-яіїєґ]+/gi, "-") + "-" + Date.now(); }
@@ -351,7 +355,7 @@ function renderCategories() {
     btn.draggable = true;
     btn.title = "Перетягни, щоб змінити порядок";
     btn.innerHTML = `<span>${escapeHtml(cat.name)}</span><span class="count">${count}</span>`;
-    btn.onclick = () => { if (categoryDragMoved) return; activeStudyFilter = ""; activeCategoryId = cat.id; save(); render(); };
+    btn.onclick = () => { if (categoryDragMoved) return; activeStudyFilter = ""; activeCategoryId = cat.id; saveActiveCategory(); render(); };
     btn.oncontextmenu = (e) => { e.preventDefault(); const action = prompt("Напиши: rename або delete", "rename"); if (action === "rename") renameCategory(cat.id); if (action === "delete") deleteCategory(cat.id); };
     btn.ondragstart = (e) => {
       draggedCategoryId = cat.id;
@@ -494,24 +498,128 @@ function printFullBook() {
   setTimeout(() => window.print(), 100);
   window.onafterprint = () => { document.title = originalTitle; };
 }
+function downloadFile(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 function exportToWord() {
   const isFilteredExport = Boolean(activeStudyFilter || search.value.trim());
   const title = isFilteredExport ? getCurrentViewTitle() : "QA Handbook";
   const body = isFilteredExport ? buildVisibleCategoriesHtml(true) : buildWordCategoriesHtml();
   const filename = title.replace(/[^\wа-яіїєґ-]+/gi, "-").replace(/^-|-$/g, "") || "QA-Handbook";
   const content = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>${escapeHtml(title)}</title><style>@page WordSection1{size:595.3pt 841.9pt;margin:0.8cm 0.8cm 0.8cm 0.8cm;}div.WordSection1{page:WordSection1;}body{font-family:Georgia,'Times New Roman',serif;color:#111827;margin:0;}h1{text-align:center;font-size:24pt;font-weight:400;margin-bottom:35px}.word-qa{width:100%;border-collapse:collapse;margin:0 0 24px 0;page-break-inside:avoid;mso-table-lspace:0pt;mso-table-rspace:0pt}.word-qa-row{page-break-inside:avoid}.word-qa td{border:none;padding:0;page-break-inside:avoid}.print-question{font-family:Arial,sans-serif;font-size:14pt;font-weight:800;margin:0 0 10px;page-break-after:avoid}.print-answer{font-size:12pt;line-height:1.5;margin-left:24px;margin-bottom:0;page-break-before:avoid}.print-answer p{margin:0 0 8px}.word-list-item{margin:3px 0 3px 0;text-indent:0;padding-left:0}</style></head><body><div class="WordSection1">${body}</div></body></html>`;
-  const blob = new Blob(["\ufeff", content], { type: "application/msword" });
-  const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = `${filename}.doc`; document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  downloadFile(`${filename}.doc`, "\ufeff" + content, "application/msword");
+}
+function exportDataJs() {
+  save();
+  const content = `window.PREFILLED_CATEGORIES = ${JSON.stringify(categories, null, 2)};\n\nwindow.PREFILLED_QUESTIONS = ${JSON.stringify(questions, null, 2)};\n`;
+  downloadFile("data.js", content, "text/javascript;charset=utf-8");
+}
+function buildDataJsContent() {
+  return `window.PREFILLED_CATEGORIES = ${JSON.stringify(categories, null, 2)};\n\nwindow.PREFILLED_QUESTIONS = ${JSON.stringify(questions, null, 2)};\n`;
+}
+function clearSavedLocalData() {
+  localStorage.removeItem("qaShpargalkaCategories");
+  localStorage.removeItem("qaShpargalkaQuestions");
+  localStorage.removeItem("qaShpargalkaActive");
+  updateSaveButtonState();
+}
+function hasLocalChanges() {
+  return Boolean(localStorage.getItem("qaShpargalkaCategories") || localStorage.getItem("qaShpargalkaQuestions"));
+}
+function updateSaveButtonState(state = "") {
+  const button = document.getElementById("syncGithubBtn");
+  if (!button) return;
+
+  button.classList.remove("dirty", "success", "error", "saving");
+  if (state) button.classList.add(state);
+  else button.classList.add(hasLocalChanges() ? "dirty" : "success");
+
+  if (state === "saving") button.textContent = "Збереження...";
+  else if (state === "error") button.textContent = "Помилка";
+  else if (state === "success" || !hasLocalChanges()) button.textContent = "Синхронізовано";
+  else button.textContent = "Не збережено";
+}
+async function syncDataToGithub() {
+  const button = document.getElementById("syncGithubBtn");
+
+  if (!hasLocalChanges()) {
+    updateSaveButtonState("success");
+    alert("Все вже синхронізовано. Локальних незбережених змін немає.");
+    return;
+  }
+
+  const token = prompt("Встав GitHub token з правом Contents: Read and write. Він не зберігається в браузері.");
+  if (!token || !token.trim()) return;
+
+  if (!confirm("Оновити data.js у GitHub репозиторії kozoshfe/crib і після успіху очистити localStorage?")) return;
+
+  button.disabled = true;
+  updateSaveButtonState("saving");
+
+  try {
+    save();
+    const owner = "kozoshfe";
+    const repo = "crib";
+    const branch = "main";
+    const path = "data.js";
+    const apiUrl = `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
+    const headers = {
+      "Accept": "application/vnd.github+json",
+      "Authorization": `Bearer ${token.trim()}`,
+      "X-GitHub-Api-Version": "2022-11-28"
+    };
+
+    const currentResponse = await fetch(`${apiUrl}?ref=${branch}`, { headers });
+    if (!currentResponse.ok) throw new Error(`Не вдалося прочитати data.js з GitHub (${currentResponse.status})`);
+    const currentFile = await currentResponse.json();
+
+    const content = buildDataJsContent();
+    const encodedContent = btoa(unescape(encodeURIComponent(content)));
+    const updateResponse = await fetch(apiUrl, {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        message: "Update QA Handbook data",
+        content: encodedContent,
+        sha: currentFile.sha,
+        branch
+      })
+    });
+
+    if (!updateResponse.ok) {
+      const details = await updateResponse.json().catch(() => ({}));
+      throw new Error(details.message || `GitHub update failed (${updateResponse.status})`);
+    }
+
+    clearSavedLocalData();
+    updateSaveButtonState("success");
+    alert("Готово: data.js оновлено на GitHub, localStorage очищено. GitHub Pages може оновлювати сайт 1-2 хвилини.");
+    setTimeout(() => location.reload(), 1200);
+  } catch (error) {
+    updateSaveButtonState("error");
+    alert(`Не вдалося синхронізувати GitHub: ${error.message}`);
+    button.disabled = false;
+    setTimeout(() => updateSaveButtonState(), 3000);
+  }
 }
 function render() { renderCategories(); renderQuestions(); buildPrintBook(); }
 
 document.getElementById("addCategoryBtn").onclick = () => { const name = prompt("Назва категорії:"); if (!name || !name.trim()) return; const id = makeId(name); categories.push({ id, name: name.trim() }); activeCategoryId = id; save(); render(); };
 function openNewQuestion() { editingIndex = null; document.getElementById("questionModalTitle").textContent = "Нове питання"; questionCategory.value = activeCategoryId; document.getElementById("questionInput").value = ""; setEditorHtml(""); deleteQuestionBtn.classList.add("hidden"); document.getElementById("questionModal").classList.remove("hidden"); focusEditor(); }
 function openEditQuestion(index) { editingIndex = index; const q = questions[index]; document.getElementById("questionModalTitle").textContent = "Редагувати питання"; questionCategory.value = q.categoryId; document.getElementById("questionInput").value = q.question; setEditorHtml(q.answer); deleteQuestionBtn.classList.remove("hidden"); document.getElementById("questionModal").classList.remove("hidden"); focusEditor(); }
-document.getElementById("addQuestionBtn").onclick = openNewQuestion;
-document.getElementById("printBookBtn").onclick = printFullBook;
-document.getElementById("exportWordBtn").onclick = exportToWord;
-document.getElementById("closeQuestionModal").onclick = () => document.getElementById("questionModal").classList.add("hidden");
+document.getElementById("addQuestionBtn").addEventListener("click", openNewQuestion);
+document.getElementById("printBookBtn").addEventListener("click", printFullBook);
+document.getElementById("exportWordBtn").addEventListener("click", exportToWord);
+document.getElementById("syncGithubBtn").addEventListener("click", syncDataToGithub);
+document.getElementById("closeQuestionModal").addEventListener("click", () => document.getElementById("questionModal").classList.add("hidden"));
 document.querySelectorAll(".editor-toolbar button").forEach(button => {
   button.addEventListener("mousedown", e => e.preventDefault());
   button.addEventListener("click", () => {
@@ -539,4 +647,5 @@ showNotLearnedBtn.onclick = () => setStudyFilter("not-learned");
 document.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") { e.preventDefault(); openNewQuestion(); } });
 toggleClearSearch();
 updateStudyFilterButtons();
+updateSaveButtonState();
 render();

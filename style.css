@@ -22,6 +22,12 @@ body { margin: 0; background: #fbfaf7; color: #111827; font-family: Georgia, "Ti
 .count { opacity: .7; font-size: 12px; white-space: nowrap; }
 .actions { display: grid; gap: 8px; margin-top: 14px; }
 .actions button { border: 0; background: #111827; color: #fff; border-radius: 8px; padding: 10px; font-weight: 700; cursor: pointer; }
+.actions .sync-github { background: #16a34a; }
+.actions .sync-github:hover { background: #15803d; }
+.actions .sync-github.saving { background: #2563eb; cursor: wait; }
+.actions .sync-github.success { background: #16a34a; }
+.actions .sync-github.error { background: #dc2626; }
+.actions .sync-github.dirty { background: #dc2626; }
 .hint { color: #6b7280; font-size: 12px; margin-top: 12px; line-height: 1.45; }
 .book { margin-left: 270px; padding: 48px 70px 80px; max-width: 1040px; width: 100%; }
 .book h1 { text-align: center; font-size: 30px; font-weight: 400; margin: 0 0 52px; }

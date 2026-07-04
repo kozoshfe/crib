@@ -1,10 +1,12 @@
 const LOCAL_CATEGORIES_KEY = "qaCategorizedQuestionsCategories";
 const LOCAL_QUESTIONS_KEY = "qaCategorizedQuestionsItems";
 const LOCAL_ACTIVE_KEY = "qaCategorizedQuestionsActive";
+const LOCAL_UNCOVERED_FILTER_KEY = "qaCategorizedQuestionsUncoveredOnly";
 
 let categories = JSON.parse(localStorage.getItem(LOCAL_CATEGORIES_KEY)) || window.PREFILLED_STANDALONE_CATEGORIES || [];
 let questions = JSON.parse(localStorage.getItem(LOCAL_QUESTIONS_KEY)) || window.PREFILLED_STANDALONE_QUESTIONS || [];
 let activeCategoryId = localStorage.getItem(LOCAL_ACTIVE_KEY) || categories[0]?.id || "";
+let showUncoveredOnly = localStorage.getItem(LOCAL_UNCOVERED_FILTER_KEY) === "true";
 let editingId = null;
 let currentUser = null;
 let syncTimer = null;
@@ -33,6 +35,7 @@ const questionInput = document.getElementById("questionInput");
 const noteInput = document.getElementById("noteInput");
 const searchInput = document.getElementById("searchInput");
 const clearSearchBtn = document.getElementById("clearSearchBtn");
+const uncoveredOnlyToggle = document.getElementById("uncoveredOnlyToggle");
 const questionsList = document.getElementById("questionsList");
 const totalQuestionsCount = document.getElementById("totalQuestionsCount");
 const coveredQuestionsCount = document.getElementById("coveredQuestionsCount");
@@ -301,12 +304,13 @@ function getVisibleQuestions() {
   } else {
     list = list.filter(item => item.categoryId === activeCategoryId);
   }
+  if (showUncoveredOnly) list = list.filter(item => !item.done);
   return list;
 }
 function getCurrentTitle() {
   const query = searchInput.value.trim();
-  if (query) return "Search results";
-  return categories.find(cat => cat.id === activeCategoryId)?.name || "";
+  const title = query ? "Search results" : categories.find(cat => cat.id === activeCategoryId)?.name || "";
+  return showUncoveredOnly && title ? `${title} - не покрито` : title;
 }
 function renderCategories() {
   categoryList.innerHTML = "";
@@ -589,6 +593,11 @@ clearSearchBtn.addEventListener("click", () => {
   renderQuestions();
   searchInput.focus();
 });
+uncoveredOnlyToggle.addEventListener("change", () => {
+  showUncoveredOnly = uncoveredOnlyToggle.checked;
+  localStorage.setItem(LOCAL_UNCOVERED_FILTER_KEY, String(showUncoveredOnly));
+  renderQuestions();
+});
 [loginEmail, loginPassword].forEach(input => {
   input.addEventListener("keydown", event => {
     if (event.key === "Enter") login();
@@ -652,6 +661,7 @@ questionsList.addEventListener("contextmenu", event => {
 });
 
 toggleClearSearch();
+uncoveredOnlyToggle.checked = showUncoveredOnly;
 updateSaveButtonState();
 render();
 handleSession(loadSession());

@@ -15,6 +15,13 @@ body { margin: 0; background: #fbfaf7; color: #111827; font-family: Georgia, "Ti
 .question-stats div { border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; padding: 9px 8px; }
 .question-stats span { display: block; font-size: 18px; font-weight: 900; line-height: 1; color: #111827; }
 .question-stats small { display: block; margin-top: 5px; color: #6b7280; font-size: 11px; font-weight: 800; }
+.filter-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f9fafb; padding: 10px 10px; margin: 0 0 14px; color: #374151; font-size: 13px; font-weight: 800; cursor: pointer; }
+.filter-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle-slider { position: relative; flex: 0 0 auto; width: 42px; height: 24px; border-radius: 999px; background: #d1d5db; transition: background .18s ease; }
+.toggle-slider::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(17,24,39,.25); transition: transform .18s ease; }
+.filter-toggle:has(input:checked) { border-color: #bbf7d0; background: #f0fdf4; color: #166534; }
+.filter-toggle input:checked + .toggle-slider { background: #16a34a; }
+.filter-toggle input:checked + .toggle-slider::after { transform: translateX(18px); }
 .category-list { flex: 1; overflow-y: auto; }
 .category-item { width: 100%; border: 0; background: transparent; text-align: left; padding: 9px 8px; border-radius: 8px; cursor: pointer; font-size: 14px; color: #374151; display: flex; justify-content: space-between; gap: 8px; }
 .category-item:hover { background: #f3f4f6; }

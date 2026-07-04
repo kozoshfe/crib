@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Окремі запитання</title>
-  <link rel="stylesheet" href="questions.css?v=10" />
+  <link rel="stylesheet" href="questions.css?v=11" />
 </head>
 <body>
   <div id="authScreen" class="auth-screen hidden">
@@ -30,6 +30,11 @@
       <div><span id="totalQuestionsCount">0</span><small>Всього запитань</small></div>
       <div><span id="coveredQuestionsCount">0</span><small>Покрито</small></div>
     </div>
+    <label class="filter-toggle" for="uncoveredOnlyToggle">
+      <span>Лише не покрито</span>
+      <input id="uncoveredOnlyToggle" type="checkbox" />
+      <span class="toggle-slider" aria-hidden="true"></span>
+    </label>
     <nav id="categoryList" class="category-list"></nav>
     <div class="actions">
       <button id="addCategoryBtn" type="button">+ Категорія</button>
@@ -67,6 +72,6 @@
 
   <script src="data.js?v=supabase-1"></script>
   <script src="questions-data.js?v=2"></script>
-  <script src="questions.js?v=11"></script>
+  <script src="questions.js?v=12"></script>
 </body>
 </html>

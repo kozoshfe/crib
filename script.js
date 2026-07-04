@@ -319,8 +319,8 @@ function setQuestionStudyStatus(index, status) {
   renderQuestions();
 }
 function updateStudyFilterButtons() {
-  showLearnedBtn.classList.toggle("active", activeStudyFilter === "learned");
-  showNotLearnedBtn.classList.toggle("active", activeStudyFilter === "not-learned");
+  showLearnedBtn.checked = activeStudyFilter === "learned";
+  showNotLearnedBtn.checked = activeStudyFilter === "not-learned";
 }
 function setStudyFilter(status) {
   activeStudyFilter = activeStudyFilter === status ? "" : status;
@@ -855,8 +855,8 @@ function deleteCategory(id) { if (questions.some(q => q.categoryId === id)) { al
 function deleteQuestion(index) { if (!confirm("Видалити питання?")) return; questions.splice(index, 1); save(); render(); }
 search.oninput = () => { toggleClearSearch(); renderQuestions(); };
 clearSearchBtn.onclick = () => { search.value = ""; toggleClearSearch(); renderQuestions(); search.focus(); };
-showLearnedBtn.onclick = () => setStudyFilter("learned");
-showNotLearnedBtn.onclick = () => setStudyFilter("not-learned");
+showLearnedBtn.addEventListener("change", () => setStudyFilter("learned"));
+showNotLearnedBtn.addEventListener("change", () => setStudyFilter("not-learned"));
 document.addEventListener("keydown", (e) => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "n") { e.preventDefault(); openNewQuestion(); } });
 function initQuestionDeepLink() {
   const params = new URLSearchParams(window.location.search);

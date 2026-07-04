@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QA Handbook</title>
-  <link rel="stylesheet" href="style.css?v=7" />
+  <link rel="stylesheet" href="style.css?v=8" />
 </head>
 <body>
   <div id="authScreen" class="auth-screen hidden">
@@ -30,8 +30,16 @@
       <div><span id="totalQuestionsCount">0</span><small>Всього запитань</small></div>
     </div>
     <div class="status-filters" aria-label="Фільтр за статусом">
-      <button id="showLearnedBtn" class="status-filter learned-filter" type="button">✓ Вивчено</button>
-      <button id="showNotLearnedBtn" class="status-filter not-learned-filter" type="button">× Не вивчено</button>
+      <label class="status-toggle learned-filter" for="showLearnedBtn">
+        <span>Вивчено</span>
+        <input id="showLearnedBtn" type="checkbox" />
+        <span class="toggle-slider" aria-hidden="true"></span>
+      </label>
+      <label class="status-toggle not-learned-filter" for="showNotLearnedBtn">
+        <span>Не вивчено</span>
+        <input id="showNotLearnedBtn" type="checkbox" />
+        <span class="toggle-slider" aria-hidden="true"></span>
+      </label>
     </div>
     <nav id="categoryList" class="category-list"></nav>
     <div class="actions">
@@ -85,6 +93,6 @@
   </div>
 
   <script src="data.js?v=supabase-1"></script>
-  <script src="script.js?v=supabase-12"></script>
+  <script src="script.js?v=supabase-13"></script>
 </body>
 </html>

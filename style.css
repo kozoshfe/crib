@@ -15,11 +15,17 @@ body { margin: 0; background: #fbfaf7; color: #111827; font-family: Georgia, "Ti
 .question-stats span { display: block; font-size: 18px; font-weight: 900; line-height: 1; color: #111827; }
 .question-stats small { display: block; margin-top: 5px; color: #6b7280; font-size: 11px; font-weight: 800; }
 .status-filters { display: grid; grid-template-columns: 1fr; gap: 7px; margin-bottom: 14px; }
-.status-filter { border: 1px solid #d1d5db; background: #fff; border-radius: 8px; padding: 9px 10px; cursor: pointer; font-size: 13px; font-weight: 800; text-align: left; }
+.status-toggle { display: flex; align-items: center; justify-content: space-between; gap: 10px; border: 1px solid #d1d5db; background: #fff; border-radius: 8px; padding: 9px 10px; cursor: pointer; font-size: 13px; font-weight: 800; }
+.status-toggle input { position: absolute; opacity: 0; pointer-events: none; }
+.toggle-slider { position: relative; flex: 0 0 auto; width: 42px; height: 24px; border-radius: 999px; background: #d1d5db; transition: background .18s ease; }
+.toggle-slider::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(17,24,39,.25); transition: transform .18s ease; }
+.status-toggle input:checked + .toggle-slider::after { transform: translateX(18px); }
 .learned-filter { color: #15803d; border-color: #bbf7d0; }
-.learned-filter:hover, .learned-filter.active { background: #dcfce7; border-color: #16a34a; color: #166534; }
+.learned-filter:hover, .learned-filter:has(input:checked) { background: #dcfce7; border-color: #16a34a; color: #166534; }
+.learned-filter input:checked + .toggle-slider { background: #16a34a; }
 .not-learned-filter { color: #b91c1c; border-color: #fecaca; }
-.not-learned-filter:hover, .not-learned-filter.active { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
+.not-learned-filter:hover, .not-learned-filter:has(input:checked) { background: #fee2e2; border-color: #dc2626; color: #991b1b; }
+.not-learned-filter input:checked + .toggle-slider { background: #dc2626; }
 .category-list { flex: 1; overflow-y: auto; }
 .category-item { width: 100%; border: 0; background: transparent; text-align: left; padding: 9px 8px; border-radius: 8px; cursor: grab; font-size: 14px; color: #374151; display: flex; justify-content: space-between; gap: 8px; }
 .category-item:active { cursor: grabbing; }

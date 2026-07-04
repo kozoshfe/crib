@@ -4,16 +4,28 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QA Tests</title>
-  <link rel="stylesheet" href="tests.css?v=1" />
+  <link rel="stylesheet" href="tests.css?v=9" />
 </head>
 <body>
   <main class="test-page">
     <div class="book-toolbar">
       <a class="toolbar-link" href="index.html">Відповіді</a>
-      <a class="toolbar-link" href="questions.html">Запитання</a>
+      <button id="logoutBtn" class="logout" type="button">Вийти</button>
     </div>
 
     <section class="test-shell" aria-live="polite">
+      <div class="level-tabs" aria-label="Рівень тесту">
+        <button class="level-tab active" type="button" data-level="junior">Junior</button>
+        <button class="level-tab" type="button" data-level="middle">Middle</button>
+        <button class="level-tab" type="button" data-level="senior">Senior</button>
+        <button class="level-tab" type="button" data-level="lead">QA Lead</button>
+        <button class="level-tab" type="button" data-level="all">Всі рівні</button>
+      </div>
+      <div class="test-actions">
+        <button id="manageBtn" class="secondary-action" type="button">Керувати питаннями</button>
+        <button id="shuffleBtn" class="secondary-action" type="button">Перемішати</button>
+      </div>
+
       <div class="test-topline">
         <div id="questionProgress">Питання 1 / 20</div>
         <div>Правильно: <span id="correctCount">0</span></div>
@@ -32,6 +44,55 @@
     </section>
   </main>
 
-  <script src="tests.js?v=1"></script>
+  <div id="manageModal" class="modal hidden">
+    <div class="modal-box">
+      <button id="closeManageModal" class="close" type="button">×</button>
+      <h2>Питання тестів</h2>
+      <div class="manager-layout">
+        <aside class="manager-list">
+          <button id="newManagedQuestionBtn" class="secondary-action full-width" type="button">+ Нове питання</button>
+          <div id="questionList" class="question-list"></div>
+        </aside>
+        <form id="questionForm" class="question-form">
+          <input id="questionId" type="hidden" />
+          <label>Питання</label>
+          <input id="testQuestionInput" placeholder="Наприклад: Що таке баг?" />
+
+          <label>Варіанти відповіді</label>
+          <input class="answer-input" data-index="0" placeholder="Варіант 1" />
+          <input class="answer-input" data-index="1" placeholder="Варіант 2" />
+          <input class="answer-input" data-index="2" placeholder="Варіант 3" />
+          <input class="answer-input" data-index="3" placeholder="Варіант 4" />
+
+          <label>Правильна відповідь</label>
+          <select id="correctAnswerSelect">
+            <option value="0">Варіант 1</option>
+            <option value="1">Варіант 2</option>
+            <option value="2">Варіант 3</option>
+            <option value="3">Варіант 4</option>
+          </select>
+
+          <label>Рівні</label>
+          <div class="level-checkboxes">
+            <label><input type="checkbox" name="testLevel" value="junior" /> Junior</label>
+            <label><input type="checkbox" name="testLevel" value="middle" /> Middle</label>
+            <label><input type="checkbox" name="testLevel" value="senior" /> Senior</label>
+            <label><input type="checkbox" name="testLevel" value="lead" /> QA Lead</label>
+          </div>
+
+          <label>Пояснення</label>
+          <textarea id="explanationInput" rows="4" placeholder="Коротке пояснення після відповіді"></textarea>
+
+          <div class="modal-actions">
+            <button class="primary-action" type="submit">Зберегти</button>
+            <button id="deleteManagedQuestionBtn" class="danger-action hidden" type="button">Видалити</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="tests-all-data.js?v=1"></script>
+  <script src="tests.js?v=14"></script>
 </body>
 </html>

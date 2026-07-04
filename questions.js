@@ -315,10 +315,29 @@ function getCurrentTitle() {
 function renderCategories() {
   categoryList.innerHTML = "";
   questionCategory.innerHTML = "";
+
+  if (showUncoveredOnly) {
+    const activeCategoryHasUncovered = questions.some(item => item.categoryId === activeCategoryId && !item.done);
+    const firstUncoveredCategory = categories.find(cat => questions.some(item => item.categoryId === cat.id && !item.done));
+    if (!activeCategoryHasUncovered && firstUncoveredCategory) {
+      activeCategoryId = firstUncoveredCategory.id;
+      localStorage.setItem(LOCAL_ACTIVE_KEY, activeCategoryId);
+    }
+  }
+
   categories.forEach(cat => {
     const categoryQuestions = questions.filter(item => item.categoryId === cat.id);
     const count = categoryQuestions.length;
     const coveredCount = categoryQuestions.filter(item => item.done).length;
+    const uncoveredCount = count - coveredCount;
+
+    const option = document.createElement("option");
+    option.value = cat.id;
+    option.textContent = cat.name;
+    questionCategory.appendChild(option);
+
+    if (showUncoveredOnly && uncoveredCount === 0) return;
+
     const button = document.createElement("button");
     button.type = "button";
     button.className = `category-item${cat.id === activeCategoryId ? " active" : ""}`;
@@ -337,11 +356,6 @@ function renderCategories() {
       if (action === "delete") deleteCategory(cat.id);
     };
     categoryList.appendChild(button);
-
-    const option = document.createElement("option");
-    option.value = cat.id;
-    option.textContent = cat.name;
-    questionCategory.appendChild(option);
   });
 }
 function renderStats() {
@@ -596,7 +610,7 @@ clearSearchBtn.addEventListener("click", () => {
 uncoveredOnlyToggle.addEventListener("change", () => {
   showUncoveredOnly = uncoveredOnlyToggle.checked;
   localStorage.setItem(LOCAL_UNCOVERED_FILTER_KEY, String(showUncoveredOnly));
-  renderQuestions();
+  render();
 });
 [loginEmail, loginPassword].forEach(input => {
   input.addEventListener("keydown", event => {

@@ -10,6 +10,7 @@ let currentUser = null;
 let syncTimer = null;
 let isHydratingRemote = false;
 let lastRemoteUpdatedAt = null;
+let activeQuestionDeepLink = null;
 let pendingQuestionJump = null;
 
 const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
@@ -450,6 +451,19 @@ function applyQuestionDeepLink() {
     setTimeout(() => target.classList.remove("jump-highlight"), 2400);
   });
 }
+function activateQuestionDeepLink() {
+  if (!activeQuestionDeepLink) return;
+
+  if (categories.some(category => category.id === activeQuestionDeepLink.categoryId)) {
+    activeCategoryId = activeQuestionDeepLink.categoryId;
+    activeStudyFilter = "";
+    search.value = "";
+    toggleClearSearch();
+    saveActiveCategory();
+  }
+
+  pendingQuestionJump = { question: activeQuestionDeepLink.question };
+}
 function renderStats() {
   totalQuestionsCount.textContent = questions.length;
 }
@@ -716,6 +730,7 @@ async function hydrateFromSupabase() {
       lastRemoteUpdatedAt = data.state.updatedAt || data.updated_at || null;
       clearSavedLocalData();
       isHydratingRemote = false;
+      activateQuestionDeepLink();
       render();
     } else if (hasLocalChanges() || questions.length) {
       await syncDataToSupabase();
@@ -764,6 +779,7 @@ async function syncDataToSupabase() {
       lastRemoteUpdatedAt = remoteUpdatedAt;
       clearSavedLocalData();
       isHydratingRemote = false;
+      activateQuestionDeepLink();
       render();
       setSyncStatus("Supabase: підтягнув новіші дані");
       return;
@@ -847,13 +863,8 @@ function initQuestionDeepLink() {
   const categoryId = params.get("category");
   const question = params.get("question");
   if (!categoryId || !question) return;
-  if (categories.some(category => category.id === categoryId)) {
-    activeCategoryId = categoryId;
-    activeStudyFilter = "";
-    search.value = "";
-    saveActiveCategory();
-  }
-  pendingQuestionJump = { question };
+  activeQuestionDeepLink = { categoryId, question };
+  activateQuestionDeepLink();
 }
 initQuestionDeepLink();
 toggleClearSearch();

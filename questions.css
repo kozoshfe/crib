@@ -48,7 +48,7 @@ button:hover { background: #1f2937; }
 .question-title { font-family: Arial, sans-serif; font-size: 19px; font-weight: 800; line-height: 1.35; margin: 0; cursor: pointer; }
 .question-note { font-size: 17px; line-height: 1.65; margin: 8px 0 0 56px; max-width: 780px; white-space: pre-wrap; }
 .question-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; font-family: Arial, sans-serif; }
-.small-btn { border: 1px solid #d1d5db; background: #fff; color: #111827; border-radius: 8px; padding: 7px 10px; cursor: pointer; font-size: 13px; font-weight: 800; white-space: nowrap; }
+.small-btn { min-width: 94px; border: 1px solid #d1d5db; background: #fff; color: #111827; border-radius: 8px; padding: 7px 10px; cursor: pointer; font-size: 13px; font-weight: 800; text-align: center; white-space: nowrap; }
 .small-btn:hover { background: #f3f4f6; }
 .done-btn { color: #15803d; border-color: #bbf7d0; }
 .done-btn:hover, .done-btn.active { background: #dcfce7; border-color: #16a34a; color: #166534; }

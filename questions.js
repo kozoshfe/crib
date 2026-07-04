@@ -10,6 +10,7 @@ let currentUser = null;
 let syncTimer = null;
 let isHydratingRemote = false;
 let lastRemoteUpdatedAt = null;
+const doneUnlockClicks = new Map();
 
 const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
@@ -311,11 +312,13 @@ function renderCategories() {
   categoryList.innerHTML = "";
   questionCategory.innerHTML = "";
   categories.forEach(cat => {
-    const count = questions.filter(item => item.categoryId === cat.id).length;
+    const categoryQuestions = questions.filter(item => item.categoryId === cat.id);
+    const count = categoryQuestions.length;
+    const coveredCount = categoryQuestions.filter(item => item.done).length;
     const button = document.createElement("button");
     button.type = "button";
     button.className = `category-item${cat.id === activeCategoryId ? " active" : ""}`;
-    button.innerHTML = `<span>${escapeHtml(cat.name)}</span><span class="count">${count}</span>`;
+    button.innerHTML = `<span>${escapeHtml(cat.name)}</span><span class="count">${count} / ${coveredCount}</span>`;
     button.onclick = () => {
       activeCategoryId = cat.id;
       localStorage.setItem(LOCAL_ACTIVE_KEY, activeCategoryId);
@@ -473,6 +476,35 @@ function toggleDone(id) {
   });
   save();
 }
+function resetDoneUnlockButton(id, button) {
+  const guard = doneUnlockClicks.get(id);
+  if (guard?.timer) clearTimeout(guard.timer);
+  doneUnlockClicks.delete(id);
+  if (button?.isConnected) button.textContent = "Готово";
+}
+function handleDoneButtonClick(id, button) {
+  const item = questions.find(entry => entry.id === id);
+  if (!item) return;
+
+  if (!item.done) {
+    toggleDone(id);
+    return;
+  }
+
+  const previous = doneUnlockClicks.get(id);
+  if (previous?.timer) clearTimeout(previous.timer);
+
+  const clicks = (previous?.clicks || 0) + 1;
+  if (clicks >= 3) {
+    resetDoneUnlockButton(id, button);
+    toggleDone(id);
+    return;
+  }
+
+  button.textContent = `${clicks}/3`;
+  const timer = setTimeout(() => resetDoneUnlockButton(id, button), 1200);
+  doneUnlockClicks.set(id, { clicks, timer });
+}
 function setCoverage(id, coveredBy) {
   questions = questions.map(item => item.id === id ? { ...item, coveredBy } : item);
   save();
@@ -591,7 +623,7 @@ questionsList.addEventListener("click", event => {
   if (event.target.closest(".coverage-combobox")) return;
   if (button) {
     const id = button.dataset.id;
-    if (button.dataset.action === "done") toggleDone(id);
+    if (button.dataset.action === "done") handleDoneButtonClick(id, button);
     return;
   }
   if (event.detail === 2 && card?.dataset.id) openEditQuestion(card.dataset.id);

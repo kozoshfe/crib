@@ -17,7 +17,10 @@ const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
 const SUPABASE_TABLE = "qa_handbook_state";
 const SUPABASE_ROW_ID = "qa-handbook-main";
+const QUESTIONS_SUPABASE_TABLE = "qa_questions_state";
+const QUESTIONS_SUPABASE_ROW_ID = "qa-questions-main";
 const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
+const QUESTIONS_LOCAL_KEY = "qaCategorizedQuestionsItems";
 
 const categoryList = document.getElementById("categoryList");
 const questionsList = document.getElementById("questionsList");
@@ -681,6 +684,76 @@ async function upsertRemoteState(state) {
     body: { id: SUPABASE_ROW_ID, state, updated_at: state.updatedAt }
   });
 }
+function resetLocalCoverageForDeletedAnswer(coverageValue) {
+  try {
+    const savedQuestions = JSON.parse(localStorage.getItem(QUESTIONS_LOCAL_KEY) || "null");
+    if (!Array.isArray(savedQuestions)) return 0;
+
+    let changedCount = 0;
+    const updatedQuestions = savedQuestions.map(question => {
+      if (question.coveredBy !== coverageValue) return question;
+      changedCount += 1;
+      return { ...question, done: false, coveredBy: "" };
+    });
+
+    if (changedCount) localStorage.setItem(QUESTIONS_LOCAL_KEY, JSON.stringify(updatedQuestions));
+    return changedCount;
+  } catch (error) {
+    console.warn("Failed to reset local question coverage", error);
+    return 0;
+  }
+}
+async function resetRemoteCoverageForDeletedAnswer(coverageValue) {
+  if (!currentUser) return 0;
+
+  const query = `/rest/v1/${QUESTIONS_SUPABASE_TABLE}?id=eq.${encodeURIComponent(QUESTIONS_SUPABASE_ROW_ID)}&select=state,updated_at`;
+  const rows = await supabaseJson(query, { headers: { "Accept": "application/json" } });
+  const remote = Array.isArray(rows) ? rows[0] : null;
+  const state = remote?.state;
+  if (!state || !Array.isArray(state.questions)) return 0;
+
+  let changedCount = 0;
+  const updatedQuestions = state.questions.map(question => {
+    if (question.coveredBy !== coverageValue) return question;
+    changedCount += 1;
+    return { ...question, done: false, coveredBy: "" };
+  });
+
+  if (!changedCount) return 0;
+
+  const nextState = {
+    ...state,
+    questions: updatedQuestions,
+    updatedAt: new Date().toISOString()
+  };
+
+  await supabaseJson(`/rest/v1/${QUESTIONS_SUPABASE_TABLE}?on_conflict=id`, {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Prefer": "resolution=merge-duplicates,return=minimal"
+    },
+    body: { id: QUESTIONS_SUPABASE_ROW_ID, state: nextState, updated_at: nextState.updatedAt }
+  });
+
+  return changedCount;
+}
+async function resetCoverageForDeletedAnswer(deletedQuestion) {
+  if (!deletedQuestion?.categoryId || !deletedQuestion?.question) return;
+
+  const coverageValue = `${deletedQuestion.categoryId}::${deletedQuestion.question}`;
+  const localChangedCount = resetLocalCoverageForDeletedAnswer(coverageValue);
+
+  try {
+    const remoteChangedCount = await resetRemoteCoverageForDeletedAnswer(coverageValue);
+    if (localChangedCount || remoteChangedCount) {
+      setSyncStatus("Пов'язані запитання переведено в Не готово");
+    }
+  } catch (error) {
+    console.warn("Failed to reset remote question coverage", error);
+    if (localChangedCount) setSyncStatus("Локально запитання переведено в Не готово");
+  }
+}
 async function authLogin() {
   const email = document.getElementById("simpleLogin")?.value.trim();
   const password = document.getElementById("simplePassword")?.value;
@@ -852,7 +925,15 @@ document.getElementById("saveQuestionBtn").onclick = () => { const categoryId = 
 deleteQuestionBtn.onclick = () => { if (editingIndex === null) return; deleteQuestion(editingIndex); document.getElementById("questionModal").classList.add("hidden"); editingIndex = null; };
 function renameCategory(id) { const cat = categories.find(c => c.id === id); const name = prompt("Нова назва:", cat.name); if (!name || !name.trim()) return; cat.name = name.trim(); save(); render(); }
 function deleteCategory(id) { if (questions.some(q => q.categoryId === id)) { alert("Спочатку видали або перенеси питання з цієї категорії."); return; } if (!confirm("Видалити категорію?")) return; categories = categories.filter(c => c.id !== id); activeCategoryId = categories[0]?.id || ""; save(); render(); }
-function deleteQuestion(index) { if (!confirm("Видалити питання?")) return; questions.splice(index, 1); save(); render(); }
+async function deleteQuestion(index) {
+  if (!confirm("Видалити питання?")) return;
+
+  const deletedQuestion = questions[index];
+  questions.splice(index, 1);
+  save();
+  render();
+  await resetCoverageForDeletedAnswer(deletedQuestion);
+}
 search.oninput = () => { toggleClearSearch(); renderQuestions(); };
 clearSearchBtn.onclick = () => { search.value = ""; toggleClearSearch(); renderQuestions(); search.focus(); };
 showLearnedBtn.addEventListener("change", () => setStudyFilter("learned"));

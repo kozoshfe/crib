@@ -18,9 +18,13 @@ const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
 const SUPABASE_TABLE = "qa_questions_state";
 const SUPABASE_ROW_ID = "qa-questions-main";
+const HANDBOOK_SUPABASE_TABLE = "qa_handbook_state";
+const HANDBOOK_SUPABASE_ROW_ID = "qa-handbook-main";
 const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
 const MAIN_CATEGORIES = window.PREFILLED_CATEGORIES || [];
 const MAIN_QUESTIONS = window.PREFILLED_QUESTIONS || [];
+let handbookCategories = loadSavedHandbookCategories();
+let handbookQuestions = loadSavedHandbookQuestions();
 
 const authScreen = document.getElementById("authScreen");
 const loginEmail = document.getElementById("loginEmail");
@@ -51,6 +55,41 @@ function escapeHtml(text) {
 }
 function escapeAttr(text) {
   return escapeHtml(text).replaceAll('"', "&quot;");
+}
+function readJsonStorage(key, fallback) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || "null");
+    return Array.isArray(value) ? value : fallback;
+  } catch (error) {
+    return fallback;
+  }
+}
+function loadSavedHandbookCategories() {
+  return readJsonStorage("qaShpargalkaCategories", MAIN_CATEGORIES);
+}
+function loadSavedHandbookQuestions() {
+  return readJsonStorage("qaShpargalkaQuestions", MAIN_QUESTIONS);
+}
+function applyHandbookState(state) {
+  if (!state || !Array.isArray(state.categories) || !Array.isArray(state.questions)) return false;
+  handbookCategories = state.categories;
+  handbookQuestions = state.questions;
+  return true;
+}
+async function hydrateHandbookCoverageSource() {
+  handbookCategories = loadSavedHandbookCategories();
+  handbookQuestions = loadSavedHandbookQuestions();
+
+  if (!currentUser) return;
+
+  try {
+    const query = `/rest/v1/${HANDBOOK_SUPABASE_TABLE}?id=eq.${encodeURIComponent(HANDBOOK_SUPABASE_ROW_ID)}&select=state,updated_at`;
+    const rows = await supabaseJson(query, { headers: { "Accept": "application/json" } });
+    const state = Array.isArray(rows) ? rows[0]?.state : null;
+    if (applyHandbookState(state)) renderQuestions();
+  } catch (error) {
+    console.warn("Failed to load handbook answers for coverage", error);
+  }
 }
 function makeId(prefix, text = "") {
   const slug = String(text || prefix).toLowerCase().trim().replace(/[^\wа-яіїєґ]+/gi, "-").replace(/^-|-$/g, "");
@@ -292,9 +331,16 @@ async function handleSession(session) {
   showApp();
   setSyncStatus(`Supabase: ${currentUser.email || "online"}`);
   await hydrateFromSupabase();
+  await hydrateHandbookCoverageSource();
 }
 function toggleClearSearch() {
   clearSearchBtn.classList.toggle("hidden", !searchInput.value);
+}
+function isQuestionCovered(item) {
+  return Boolean(item.done && item.coveredBy);
+}
+function isQuestionUncovered(item) {
+  return !isQuestionCovered(item);
 }
 function getVisibleQuestions() {
   const query = searchInput.value.toLowerCase().trim();
@@ -304,7 +350,7 @@ function getVisibleQuestions() {
   } else {
     list = list.filter(item => item.categoryId === activeCategoryId);
   }
-  if (showUncoveredOnly) list = list.filter(item => !item.done);
+  if (showUncoveredOnly) list = list.filter(isQuestionUncovered);
   return list;
 }
 function getCurrentTitle() {
@@ -317,8 +363,8 @@ function renderCategories() {
   questionCategory.innerHTML = "";
 
   if (showUncoveredOnly) {
-    const activeCategoryHasUncovered = questions.some(item => item.categoryId === activeCategoryId && !item.done);
-    const firstUncoveredCategory = categories.find(cat => questions.some(item => item.categoryId === cat.id && !item.done));
+    const activeCategoryHasUncovered = questions.some(item => item.categoryId === activeCategoryId && isQuestionUncovered(item));
+    const firstUncoveredCategory = categories.find(cat => questions.some(item => item.categoryId === cat.id && isQuestionUncovered(item)));
     if (!activeCategoryHasUncovered && firstUncoveredCategory) {
       activeCategoryId = firstUncoveredCategory.id;
       localStorage.setItem(LOCAL_ACTIVE_KEY, activeCategoryId);
@@ -328,7 +374,7 @@ function renderCategories() {
   categories.forEach(cat => {
     const categoryQuestions = questions.filter(item => item.categoryId === cat.id);
     const count = categoryQuestions.length;
-    const coveredCount = categoryQuestions.filter(item => item.done).length;
+    const coveredCount = categoryQuestions.filter(isQuestionCovered).length;
     const uncoveredCount = count - coveredCount;
 
     const option = document.createElement("option");
@@ -360,7 +406,7 @@ function renderCategories() {
 }
 function renderStats() {
   totalQuestionsCount.textContent = questions.length;
-  coveredQuestionsCount.textContent = questions.filter(item => item.done).length;
+  coveredQuestionsCount.textContent = questions.filter(isQuestionCovered).length;
 }
 function renderQuestions() {
   const list = getVisibleQuestions();
@@ -394,8 +440,8 @@ function renderQuestions() {
 }
 function renderCoverageSelect(item) {
   const selectedLabel = getCoverageLabel(item.coveredBy);
-  const groups = MAIN_CATEGORIES.map(category => {
-    const categoryQuestions = MAIN_QUESTIONS.filter(question => question.categoryId === category.id);
+  const groups = handbookCategories.map(category => {
+    const categoryQuestions = handbookQuestions.filter(question => question.categoryId === category.id);
     if (!categoryQuestions.length) return "";
     const questionOptions = categoryQuestions.map(question => {
       const value = `${category.id}::${question.question}`;
@@ -433,7 +479,7 @@ function renderCoverageSelect(item) {
 function getCoverageLabel(coveredBy) {
   const [categoryId, questionText] = String(coveredBy || "").split("::");
   if (!categoryId || !questionText) return "";
-  const categoryName = MAIN_CATEGORIES.find(category => category.id === categoryId)?.name;
+  const categoryName = handbookCategories.find(category => category.id === categoryId)?.name;
   return categoryName ? `${categoryName}: ${questionText}` : questionText;
 }
 function getCoverageUrl(coveredBy) {

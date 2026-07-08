@@ -9054,8 +9054,14 @@ const levelQuestionIndexes = {
   senior: [],
   lead: []
 };
+const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
+const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
+const TEST_KNOWN_SUPABASE_TABLE = "qa_test_known_state";
+const TEST_KNOWN_SUPABASE_ROW_ID = "qa-test-known-main";
 const TEST_QUESTIONS_KEY = "qaTestQuestionsAllLevels2026";
 const TEST_PROGRESS_KEY = "qaActiveTestProgressHandbookAll2026";
+const TEST_KNOWN_LOCAL_KEY = "qaTestKnownQuestions2026";
 const levelLabels = {
   junior: "Junior",
   middle: "Middle",
@@ -9107,6 +9113,18 @@ function loadTestQuestions() {
 function saveTestQuestions() {
   localStorage.setItem(TEST_QUESTIONS_KEY, JSON.stringify(testQuestions));
 }
+function loadKnownQuestionStatus() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(TEST_KNOWN_LOCAL_KEY) || "null");
+    return saved && typeof saved === "object" && !Array.isArray(saved) ? saved : {};
+  } catch (error) {
+    console.warn("Failed to load known test questions", error);
+    return {};
+  }
+}
+function saveKnownQuestionStatus() {
+  localStorage.setItem(TEST_KNOWN_LOCAL_KEY, JSON.stringify(knownQuestionStatus));
+}
 function saveTestProgress(completed = false) {
   if (!activeQuestions.length) {
     localStorage.removeItem(TEST_PROGRESS_KEY);
@@ -9140,13 +9158,20 @@ let wrongAnswers = [];
 let activeAnswerOrders = [];
 let testQuestions = loadTestQuestions();
 let editingQuestionId = null;
+let knownQuestionStatus = loadKnownQuestionStatus();
+let knownSyncTimer = null;
 
 const levelTabs = document.querySelectorAll(".level-tab");
 const shuffleBtn = document.getElementById("shuffleBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const manageBtn = document.getElementById("manageBtn");
+const knownQuestionsBtn = document.getElementById("knownQuestionsBtn");
 const manageModal = document.getElementById("manageModal");
 const closeManageModal = document.getElementById("closeManageModal");
+const knownQuestionsModal = document.getElementById("knownQuestionsModal");
+const closeKnownQuestionsModal = document.getElementById("closeKnownQuestionsModal");
+const knownQuestionsList = document.getElementById("knownQuestionsList");
+const knownQuestionsSyncStatus = document.getElementById("knownQuestionsSyncStatus");
 const questionList = document.getElementById("questionList");
 const questionForm = document.getElementById("questionForm");
 const questionIdInput = document.getElementById("questionId");
@@ -9215,6 +9240,154 @@ function escapeHtml(text) {
     .replaceAll("&", "&amp;")
     .replaceAll("<", "&lt;")
     .replaceAll(">", "&gt;");
+}
+function loadSupabaseSession() {
+  try {
+    const session = JSON.parse(localStorage.getItem(SUPABASE_SESSION_KEY) || "null");
+    return session?.access_token ? session : null;
+  } catch (error) {
+    return null;
+  }
+}
+async function supabaseJson(path, options = {}) {
+  const session = loadSupabaseSession();
+  const headers = {
+    "apikey": SUPABASE_ANON_KEY,
+    "Authorization": `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
+    ...options.headers
+  };
+
+  if (options.body !== undefined) headers["Content-Type"] = "application/json";
+
+  const response = await fetch(`${SUPABASE_URL}${path}`, {
+    method: options.method || "GET",
+    headers,
+    body: options.body !== undefined ? JSON.stringify(options.body) : undefined
+  });
+
+  if (!response.ok) {
+    const details = await response.json().catch(() => ({}));
+    throw new Error(details.message || `Supabase request failed (${response.status})`);
+  }
+
+  if (response.status === 204) return null;
+  const text = await response.text();
+  return text ? JSON.parse(text) : null;
+}
+function setKnownSyncStatus(text, state = "") {
+  if (!knownQuestionsSyncStatus) return;
+  knownQuestionsSyncStatus.textContent = text;
+  knownQuestionsSyncStatus.classList.remove("error", "success");
+  if (state) knownQuestionsSyncStatus.classList.add(state);
+}
+function getKnownCloudState() {
+  return {
+    knownQuestionStatus,
+    updatedAt: new Date().toISOString()
+  };
+}
+function applyKnownCloudState(state) {
+  if (!state || !state.knownQuestionStatus || typeof state.knownQuestionStatus !== "object" || Array.isArray(state.knownQuestionStatus)) return false;
+  knownQuestionStatus = state.knownQuestionStatus;
+  saveKnownQuestionStatus();
+  return true;
+}
+async function loadRemoteKnownQuestionStatus() {
+  const query = `/rest/v1/${TEST_KNOWN_SUPABASE_TABLE}?id=eq.${encodeURIComponent(TEST_KNOWN_SUPABASE_ROW_ID)}&select=state,updated_at`;
+  const rows = await supabaseJson(query, { headers: { "Accept": "application/json" } });
+  return Array.isArray(rows) ? rows[0] : null;
+}
+async function upsertRemoteKnownQuestionStatus() {
+  const state = getKnownCloudState();
+  await supabaseJson(`/rest/v1/${TEST_KNOWN_SUPABASE_TABLE}?on_conflict=id`, {
+    method: "POST",
+    headers: {
+      "Accept": "application/json",
+      "Prefer": "resolution=merge-duplicates,return=minimal"
+    },
+    body: { id: TEST_KNOWN_SUPABASE_ROW_ID, state, updated_at: state.updatedAt }
+  });
+}
+async function hydrateKnownQuestionStatus() {
+  if (!loadSupabaseSession()) {
+    setKnownSyncStatus("Supabase: увійди в акаунт", "error");
+    return;
+  }
+
+  try {
+    setKnownSyncStatus("Supabase: завантаження...");
+    const remote = await loadRemoteKnownQuestionStatus();
+    if (remote?.state && applyKnownCloudState(remote.state)) {
+      setKnownSyncStatus("Supabase: готово", "success");
+      renderKnownQuestionsList();
+      return;
+    }
+
+    await upsertRemoteKnownQuestionStatus();
+    setKnownSyncStatus("Supabase: готово", "success");
+  } catch (error) {
+    console.warn("Failed to sync known test questions", error);
+    setKnownSyncStatus("Supabase: потрібна таблиця qa_test_known_state", "error");
+  }
+}
+function scheduleKnownQuestionSync() {
+  clearTimeout(knownSyncTimer);
+  knownSyncTimer = setTimeout(async () => {
+    if (!loadSupabaseSession()) {
+      setKnownSyncStatus("Supabase: увійди в акаунт", "error");
+      return;
+    }
+
+    try {
+      setKnownSyncStatus("Supabase: збереження...");
+      await upsertRemoteKnownQuestionStatus();
+      setKnownSyncStatus("Supabase: збережено", "success");
+    } catch (error) {
+      console.warn("Failed to save known test questions", error);
+      setKnownSyncStatus("Supabase: не збережено", "error");
+    }
+  }, 500);
+}
+function renderKnownQuestionsList() {
+  const sections = Object.entries(levelLabels).map(([level, label]) => {
+    const levelQuestions = testQuestions.filter(question => question.levels.includes(level));
+    const rows = levelQuestions.map((question, index) => `
+      <label class="known-question-row">
+        <span class="known-question-text">
+          <span class="known-question-index">${index + 1}.</span>
+          <span>${escapeHtml(question.question)}</span>
+        </span>
+        <span class="known-checkbox">
+          <input type="checkbox" data-question-id="${escapeHtml(question.id)}"${knownQuestionStatus[question.id] ? " checked" : ""} />
+          <span>Знаю</span>
+        </span>
+      </label>
+    `).join("");
+
+    return `
+      <section class="known-level">
+        <h3 class="known-level-title">${escapeHtml(label)}:</h3>
+        ${rows || `<div class="wrong-review empty"><p>Питань ще немає.</p></div>`}
+      </section>
+    `;
+  }).join("");
+
+  knownQuestionsList.innerHTML = sections;
+}
+function openKnownQuestions() {
+  renderKnownQuestionsList();
+  knownQuestionsModal.classList.remove("hidden");
+  hydrateKnownQuestionStatus();
+}
+function closeKnownQuestions() {
+  knownQuestionsModal.classList.add("hidden");
+}
+function setKnownQuestion(questionId, isKnown) {
+  if (isKnown) knownQuestionStatus[questionId] = true;
+  else delete knownQuestionStatus[questionId];
+  saveKnownQuestionStatus();
+  renderKnownQuestionsList();
+  scheduleKnownQuestionSync();
 }
 function resetTest(level = activeLevel, shouldShuffle = true, shouldSave = true) {
   activeLevel = level;
@@ -9620,7 +9793,9 @@ levelTabs.forEach(tab => {
 });
 shuffleBtn.addEventListener("click", () => resetTest(activeLevel, true));
 manageBtn.addEventListener("click", openManager);
+knownQuestionsBtn.addEventListener("click", openKnownQuestions);
 closeManageModal.addEventListener("click", closeManager);
+closeKnownQuestionsModal.addEventListener("click", closeKnownQuestions);
 newManagedQuestionBtn.addEventListener("click", resetManagedQuestionForm);
 questionForm.addEventListener("submit", saveManagedQuestion);
 deleteManagedQuestionBtn.addEventListener("click", deleteManagedQuestion);
@@ -9631,6 +9806,14 @@ questionList.addEventListener("click", event => {
 });
 manageModal.addEventListener("click", event => {
   if (event.target === manageModal) closeManager();
+});
+knownQuestionsModal.addEventListener("click", event => {
+  if (event.target === knownQuestionsModal) closeKnownQuestions();
+});
+knownQuestionsList.addEventListener("change", event => {
+  const checkbox = event.target.closest("input[type='checkbox'][data-question-id]");
+  if (!checkbox) return;
+  setKnownQuestion(checkbox.dataset.questionId, checkbox.checked);
 });
 logoutBtn.addEventListener("click", () => {
   localStorage.removeItem("qaShpargalkaSupabaseSession");

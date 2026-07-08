@@ -9366,7 +9366,7 @@ function renderKnownQuestionsList() {
   const sections = Object.entries(levelLabels).map(([level, label]) => {
     const levelQuestions = testQuestions.filter(question => question.levels.includes(level) && matchesKnownQuestionFilter(question));
     const rows = levelQuestions.map((question, index) => `
-      <label class="known-question-row">
+      <div class="known-question-row">
         <span class="known-question-text">
           <span class="known-question-index">${index + 1}.</span>
           <span>${escapeHtml(question.question)}</span>
@@ -9375,7 +9375,7 @@ function renderKnownQuestionsList() {
           <input type="checkbox" data-question-id="${escapeHtml(question.id)}"${knownQuestionStatus[question.id] ? " checked" : ""} />
           <span>Знаю</span>
         </span>
-      </label>
+      </div>
     `).join("");
 
     return `

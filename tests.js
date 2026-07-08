@@ -8325,6 +8325,7 @@ function saveTestProgress(completed = false) {
     selectedIndex,
     answered,
     correctCount,
+    wrongAnswers,
     completed,
     questionsKey: TEST_QUESTIONS_KEY
   }));
@@ -8339,6 +8340,7 @@ let currentIndex = 0;
 let selectedIndex = null;
 let answered = false;
 let correctCount = 0;
+let wrongAnswers = [];
 let testQuestions = loadTestQuestions();
 let editingQuestionId = null;
 
@@ -8394,6 +8396,7 @@ function resetTest(level = activeLevel, shouldShuffle = true, shouldSave = true)
   selectedIndex = null;
   answered = false;
   correctCount = 0;
+  wrongAnswers = [];
   renderLevelTabs();
   renderQuestion();
   if (shouldSave) saveTestProgress(false);
@@ -8494,6 +8497,9 @@ function restoreTestProgress() {
     selectedIndex = Number.isInteger(saved.selectedIndex) ? saved.selectedIndex : null;
     answered = Boolean(saved.answered);
     correctCount = Math.max(Number(saved.correctCount) || 0, 0);
+    wrongAnswers = Array.isArray(saved.wrongAnswers)
+      ? saved.wrongAnswers.filter(answer => answer && findQuestionById(answer.questionId))
+      : [];
 
     renderLevelTabs();
     if (saved.completed) {
@@ -8628,6 +8634,12 @@ function submitAnswer() {
   answered = true;
   const isCorrect = selectedIndex === item.correctIndex;
   if (isCorrect) correctCount += 1;
+  if (!isCorrect) {
+    wrongAnswers.push({
+      questionId: item.id,
+      selectedIndex
+    });
+  }
 
   correctCountEl.textContent = correctCount;
   answersList.querySelectorAll(".answer-option").forEach(button => {
@@ -8642,16 +8654,73 @@ function submitAnswer() {
   saveTestProgress(false);
 }
 
+function renderWrongAnswersReview() {
+  if (!wrongAnswers.length) {
+    return `
+      <div class="wrong-review empty">
+        <h2>Помилок немає</h2>
+        <p>Красиво пройдено. Повторювати нічого не треба.</p>
+      </div>
+    `;
+  }
+
+  const wrongItems = wrongAnswers.map((answer, index) => {
+    const item = findQuestionById(answer.questionId);
+    if (!item) return "";
+    const correctAnswer = item.answers[item.correctIndex] || "";
+    const selectedAnswer = Number.isInteger(answer.selectedIndex)
+      ? item.answers[answer.selectedIndex] || "Не вибрано"
+      : "Не вибрано";
+
+    return `
+      <article class="wrong-review-item">
+        <div class="wrong-review-number">Помилка ${index + 1}</div>
+        <h2>${escapeHtml(item.question)}</h2>
+        <p><strong>Твоя відповідь:</strong> ${escapeHtml(selectedAnswer)}</p>
+        <p><strong>Правильна відповідь:</strong> ${escapeHtml(correctAnswer)}</p>
+        <p><strong>Чому:</strong> ${escapeHtml(item.explanation)}</p>
+      </article>
+    `;
+  }).join("");
+
+  return `
+    <div class="wrong-review">
+      <div class="wrong-review-head">
+        <h2>Питання для повторення</h2>
+        <button class="secondary-action retry-wrong-btn" type="button">Повторити помилки</button>
+      </div>
+      ${wrongItems}
+    </div>
+  `;
+}
+
+function retryWrongAnswers() {
+  const retryQuestions = wrongAnswers
+    .map(answer => findQuestionById(answer.questionId))
+    .filter(Boolean);
+
+  if (!retryQuestions.length) return;
+
+  activeQuestions = retryQuestions;
+  currentIndex = 0;
+  selectedIndex = null;
+  answered = false;
+  correctCount = 0;
+  wrongAnswers = [];
+  renderQuestion();
+  saveTestProgress(false);
+}
+
 function renderResult(shouldSave = true) {
   const scorePercent = activeQuestions.length ? (correctCount / activeQuestions.length) * 100 : 0;
   questionProgress.textContent = "Тест завершено";
   progressFill.style.width = "100%";
   questionText.textContent = `Результат: ${correctCount} / ${activeQuestions.length}`;
-  answersList.innerHTML = "";
+  answersList.innerHTML = renderWrongAnswersReview();
   feedback.className = `feedback${scorePercent >= 90 ? "" : " error"}`;
   feedback.textContent = scorePercent >= 90
     ? "Ти готовий для цієї ролі"
-    : "Потрібно ще вчитись";
+    : `Потрібно ще повторити. Помилок: ${wrongAnswers.length}`;
   answerBtn.textContent = "Пройти ще раз";
   answerBtn.disabled = false;
   answered = true;
@@ -8681,6 +8750,12 @@ logoutBtn.addEventListener("click", () => {
   window.location.href = "index.html";
 });
 answersList.addEventListener("click", event => {
+  const retryButton = event.target.closest(".retry-wrong-btn");
+  if (retryButton) {
+    retryWrongAnswers();
+    return;
+  }
+
   const button = event.target.closest(".answer-option");
   if (!button) return;
   selectAnswer(Number(button.dataset.index));

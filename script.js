@@ -689,17 +689,13 @@ function resetLocalCoverageForDeletedAnswer(coverageValue) {
     const savedQuestions = JSON.parse(localStorage.getItem(QUESTIONS_LOCAL_KEY) || "null");
     if (!Array.isArray(savedQuestions)) return 0;
 
-    let changedCount = 0;
-    const updatedQuestions = savedQuestions.map(question => {
-      if (question.coveredBy !== coverageValue) return question;
-      changedCount += 1;
-      return { ...question, done: false, coveredBy: "" };
-    });
+    const updatedQuestions = savedQuestions.filter(question => question.coveredBy !== coverageValue);
+    const changedCount = savedQuestions.length - updatedQuestions.length;
 
     if (changedCount) localStorage.setItem(QUESTIONS_LOCAL_KEY, JSON.stringify(updatedQuestions));
     return changedCount;
   } catch (error) {
-    console.warn("Failed to reset local question coverage", error);
+    console.warn("Failed to delete local linked question", error);
     return 0;
   }
 }
@@ -712,12 +708,8 @@ async function resetRemoteCoverageForDeletedAnswer(coverageValue) {
   const state = remote?.state;
   if (!state || !Array.isArray(state.questions)) return 0;
 
-  let changedCount = 0;
-  const updatedQuestions = state.questions.map(question => {
-    if (question.coveredBy !== coverageValue) return question;
-    changedCount += 1;
-    return { ...question, done: false, coveredBy: "" };
-  });
+  const updatedQuestions = state.questions.filter(question => question.coveredBy !== coverageValue);
+  const changedCount = state.questions.length - updatedQuestions.length;
 
   if (!changedCount) return 0;
 
@@ -747,11 +739,11 @@ async function resetCoverageForDeletedAnswer(deletedQuestion) {
   try {
     const remoteChangedCount = await resetRemoteCoverageForDeletedAnswer(coverageValue);
     if (localChangedCount || remoteChangedCount) {
-      setSyncStatus("Пов'язані запитання переведено в Не готово");
+      setSyncStatus("Пов'язані запитання видалено");
     }
   } catch (error) {
-    console.warn("Failed to reset remote question coverage", error);
-    if (localChangedCount) setSyncStatus("Локально запитання переведено в Не готово");
+    console.warn("Failed to delete remote linked question", error);
+    if (localChangedCount) setSyncStatus("Локально пов'язані запитання видалено");
   }
 }
 async function authLogin() {

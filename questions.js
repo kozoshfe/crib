@@ -4,7 +4,7 @@ const LOCAL_ACTIVE_KEY = "qaCategorizedQuestionsActive";
 const LOCAL_UNCOVERED_FILTER_KEY = "qaCategorizedQuestionsUncoveredOnly";
 const LOCAL_DATA_VERSION_KEY = "qaCategorizedQuestionsDataVersion";
 const FORCE_CLEAN_SYNC_KEY = "qaCategorizedQuestionsForceCleanSync";
-const STANDALONE_QUESTIONS_DATA_VERSION = "handbook-sync-manual-2026-07-08";
+const STANDALONE_QUESTIONS_DATA_VERSION = "handbook-sync-manual-delete-2026-07-08";
 const MAIN_CATEGORIES = window.PREFILLED_CATEGORIES || [];
 const MAIN_QUESTIONS = window.PREFILLED_QUESTIONS || [];
 
@@ -34,15 +34,18 @@ function isHandbookMirrorQuestion(question) {
   return question?.source === "handbook"
     || String(question?.id || "").startsWith("handbook-question-");
 }
+function isManualQuestion(question, handbookCategoryIds, handbookQuestionKeys) {
+  if (question?.source === "manual") return true;
+  if (isHandbookMirrorQuestion(question)) return false;
+  if (handbookQuestionKeys.has(handbookQuestionKey(question))) return false;
+  return !handbookCategoryIds.has(question.categoryId);
+}
 function buildQuestionBankFromHandbook(sourceCategories = MAIN_CATEGORIES, sourceQuestions = MAIN_QUESTIONS, existingCategories = [], existingQuestions = []) {
   const handbookCategoryIds = new Set(sourceCategories.map(category => category.id));
   const handbookQuestionKeys = new Set(sourceQuestions.map(handbookQuestionKey));
   const existingByKey = new Map(existingQuestions.map(question => [handbookQuestionKey(question), question]));
-  const manualCategories = existingCategories.filter(category => !handbookCategoryIds.has(category.id));
-  const manualQuestions = existingQuestions.filter(question => {
-    if (isHandbookMirrorQuestion(question)) return false;
-    return !handbookQuestionKeys.has(handbookQuestionKey(question));
-  });
+  const manualCategories = existingCategories.filter(category => category.source === "manual" || !handbookCategoryIds.has(category.id));
+  const manualQuestions = existingQuestions.filter(question => isManualQuestion(question, handbookCategoryIds, handbookQuestionKeys));
 
   const nextCategories = [
     ...sourceCategories.map(category => ({ ...category, source: "handbook" })),
@@ -635,7 +638,7 @@ function saveQuestionFromModal() {
   if (editingId) {
     questions = questions.map(item => item.id === editingId ? { ...item, categoryId, question, note } : item);
   } else {
-    questions.unshift({ id: makeId("question", question), categoryId, question, note, done: false, createdAt: new Date().toISOString() });
+    questions.unshift({ id: makeId("question", question), source: "manual", categoryId, question, note, done: false, createdAt: new Date().toISOString() });
   }
   activeCategoryId = categoryId;
   modal.classList.add("hidden");
@@ -737,7 +740,7 @@ function addCategory() {
   const name = prompt("Назва категорії:");
   if (!name || !name.trim()) return;
   const id = makeId("category", name);
-  categories.push({ id, name: name.trim() });
+  categories.push({ id, name: name.trim(), source: "manual" });
   activeCategoryId = id;
   save();
 }

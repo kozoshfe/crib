@@ -9118,6 +9118,7 @@ function saveTestProgress(completed = false) {
     questionIds: activeQuestions.map(question => question.id),
     currentIndex,
     selectedIndex,
+    answerOrders: activeAnswerOrders,
     answered,
     correctCount,
     wrongAnswers,
@@ -9136,6 +9137,7 @@ let selectedIndex = null;
 let answered = false;
 let correctCount = 0;
 let wrongAnswers = [];
+let activeAnswerOrders = [];
 let testQuestions = loadTestQuestions();
 let editingQuestionId = null;
 
@@ -9161,6 +9163,7 @@ const questionText = document.getElementById("questionText");
 const answersList = document.getElementById("answersList");
 const feedback = document.getElementById("feedback");
 const answerBtn = document.getElementById("answerBtn");
+const exportWrongTxtBtn = document.getElementById("exportWrongTxtBtn");
 
 function shuffleList(list) {
   const shuffled = [...list];
@@ -9169,6 +9172,36 @@ function shuffleList(list) {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled;
+}
+function createAnswerOrder(question) {
+  return shuffleList(question.answers.map((_, index) => index));
+}
+function createAnswerOrders(questions) {
+  return questions.map(createAnswerOrder);
+}
+function isValidAnswerOrders(answerOrders, questions) {
+  return Array.isArray(answerOrders)
+    && answerOrders.length === questions.length
+    && answerOrders.every((order, index) => (
+      Array.isArray(order)
+      && questions[index]
+      && order.length === questions[index].answers.length
+      && order.every(answerIndex => Number.isInteger(answerIndex) && answerIndex >= 0 && answerIndex < questions[index].answers.length)
+    ));
+}
+function getCurrentAnswerOrder() {
+  const item = activeQuestions[currentIndex];
+  if (!item) return [];
+
+  const order = activeAnswerOrders[currentIndex];
+  if (Array.isArray(order) && order.length === item.answers.length) return order;
+
+  activeAnswerOrders[currentIndex] = item.answers.map((_, index) => index);
+  return activeAnswerOrders[currentIndex];
+}
+function getSelectedOriginalIndex() {
+  const order = getCurrentAnswerOrder();
+  return selectedIndex !== null ? order[selectedIndex] : null;
 }
 function buildLevelQuestions(level) {
   return testQuestions.filter(question => question.levels.includes(level));
@@ -9187,6 +9220,7 @@ function resetTest(level = activeLevel, shouldShuffle = true, shouldSave = true)
   activeLevel = level;
   const levelQuestions = buildLevelQuestions(activeLevel);
   activeQuestions = shouldShuffle ? shuffleList(levelQuestions) : levelQuestions;
+  activeAnswerOrders = createAnswerOrders(activeQuestions);
   currentIndex = 0;
   selectedIndex = null;
   answered = false;
@@ -9214,6 +9248,7 @@ function renderQuestion(options = {}) {
     feedback.textContent = "";
     answerBtn.textContent = "Відповісти";
     answerBtn.disabled = true;
+    exportWrongTxtBtn.classList.add("hidden");
     return;
   }
   if (!keepState) {
@@ -9221,6 +9256,7 @@ function renderQuestion(options = {}) {
     answered = false;
   }
 
+  const answerOrder = getCurrentAnswerOrder();
   questionProgress.textContent = `Питання ${currentIndex + 1} / ${activeQuestions.length}`;
   correctCountEl.textContent = correctCount;
   progressFill.style.width = `${((currentIndex + 1) / activeQuestions.length) * 100}%`;
@@ -9229,11 +9265,12 @@ function renderQuestion(options = {}) {
   feedback.textContent = "";
   answerBtn.textContent = "Відповісти";
   answerBtn.disabled = true;
+  exportWrongTxtBtn.classList.add("hidden");
 
-  answersList.innerHTML = item.answers.map((answer, index) => `
+  answersList.innerHTML = answerOrder.map((answerIndex, index) => `
     <button class="answer-option" type="button" data-index="${index}">
       <span class="answer-mark" aria-hidden="true"></span>
-      <span>${escapeHtml(answer)}</span>
+      <span>${escapeHtml(item.answers[answerIndex])}</span>
     </button>
   `).join("");
 
@@ -9252,7 +9289,8 @@ function applySelectedAnswer() {
 
 function buildAnswerFeedback(item, isCorrect) {
   const correctAnswer = item.answers[item.correctIndex] || "";
-  const selectedAnswer = selectedIndex !== null ? item.answers[selectedIndex] || "" : "";
+  const selectedOriginalIndex = getSelectedOriginalIndex();
+  const selectedAnswer = selectedOriginalIndex !== null ? item.answers[selectedOriginalIndex] || "" : "";
 
   if (isCorrect) {
     return `Правильно : ${item.explanation}`;
@@ -9265,10 +9303,13 @@ function renderAnsweredState() {
   const item = activeQuestions[currentIndex];
   if (!item || selectedIndex === null) return;
 
-  const isCorrect = selectedIndex === item.correctIndex;
+  const answerOrder = getCurrentAnswerOrder();
+  const correctDisplayIndex = answerOrder.indexOf(item.correctIndex);
+  const selectedOriginalIndex = getSelectedOriginalIndex();
+  const isCorrect = selectedOriginalIndex === item.correctIndex;
   answersList.querySelectorAll(".answer-option").forEach(button => {
     const index = Number(button.dataset.index);
-    button.classList.toggle("correct", index === item.correctIndex);
+    button.classList.toggle("correct", index === correctDisplayIndex);
     button.classList.toggle("wrong", index === selectedIndex && !isCorrect);
   });
 
@@ -9292,6 +9333,9 @@ function restoreTestProgress() {
     selectedIndex = Number.isInteger(saved.selectedIndex) ? saved.selectedIndex : null;
     answered = Boolean(saved.answered);
     correctCount = Math.max(Number(saved.correctCount) || 0, 0);
+    activeAnswerOrders = isValidAnswerOrders(saved.answerOrders, activeQuestions)
+      ? saved.answerOrders
+      : activeQuestions.map(question => question.answers.map((_, index) => index));
     wrongAnswers = Array.isArray(saved.wrongAnswers)
       ? saved.wrongAnswers.filter(answer => answer && findQuestionById(answer.questionId))
       : [];
@@ -9427,19 +9471,22 @@ function submitAnswer() {
   }
 
   answered = true;
-  const isCorrect = selectedIndex === item.correctIndex;
+  const answerOrder = getCurrentAnswerOrder();
+  const selectedOriginalIndex = getSelectedOriginalIndex();
+  const correctDisplayIndex = answerOrder.indexOf(item.correctIndex);
+  const isCorrect = selectedOriginalIndex === item.correctIndex;
   if (isCorrect) correctCount += 1;
   if (!isCorrect) {
     wrongAnswers.push({
       questionId: item.id,
-      selectedIndex
+      selectedIndex: selectedOriginalIndex
     });
   }
 
   correctCountEl.textContent = correctCount;
   answersList.querySelectorAll(".answer-option").forEach(button => {
     const index = Number(button.dataset.index);
-    button.classList.toggle("correct", index === item.correctIndex);
+    button.classList.toggle("correct", index === correctDisplayIndex);
     button.classList.toggle("wrong", index === selectedIndex && !isCorrect);
   });
 
@@ -9497,6 +9544,7 @@ function retryWrongAnswers() {
   if (!retryQuestions.length) return;
 
   activeQuestions = retryQuestions;
+  activeAnswerOrders = createAnswerOrders(activeQuestions);
   currentIndex = 0;
   selectedIndex = null;
   answered = false;
@@ -9504,6 +9552,50 @@ function retryWrongAnswers() {
   wrongAnswers = [];
   renderQuestion();
   saveTestProgress(false);
+}
+
+function buildWrongAnswersTxt() {
+  const levelName = levelLabels[activeLevel] || activeLevel;
+  const lines = [
+    `Помилки тесту: ${levelName}`,
+    `Кількість помилок: ${wrongAnswers.length}`,
+    ""
+  ];
+
+  wrongAnswers.forEach((answer, index) => {
+    const item = findQuestionById(answer.questionId);
+    if (!item) return;
+
+    const selectedAnswer = Number.isInteger(answer.selectedIndex)
+      ? item.answers[answer.selectedIndex] || "Не вибрано"
+      : "Не вибрано";
+    const correctAnswer = item.answers[item.correctIndex] || "";
+
+    lines.push(
+      `${index + 1}. ${item.question}`,
+      `Твоя відповідь: ${selectedAnswer}`,
+      `Правильна відповідь: ${correctAnswer}`,
+      `Чому: ${item.explanation}`,
+      ""
+    );
+  });
+
+  return lines.join("\n");
+}
+
+function downloadWrongAnswersTxt() {
+  if (!wrongAnswers.length) return;
+
+  const levelName = String(activeLevel || "test").replace(/[^\wа-яіїєґ-]+/gi, "-").replace(/^-|-$/g, "");
+  const blob = new Blob([buildWrongAnswersTxt()], { type: "text/plain;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `wrong-answers-${levelName || "test"}.txt`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 function renderResult(shouldSave = true) {
@@ -9518,6 +9610,7 @@ function renderResult(shouldSave = true) {
     : `Потрібно ще повторити. Помилок: ${wrongAnswers.length}`;
   answerBtn.textContent = "Пройти ще раз";
   answerBtn.disabled = false;
+  exportWrongTxtBtn.classList.toggle("hidden", wrongAnswers.length === 0);
   answered = true;
   if (shouldSave) saveTestProgress(true);
 }
@@ -9563,6 +9656,7 @@ answerBtn.addEventListener("click", () => {
   }
   submitAnswer();
 });
+exportWrongTxtBtn.addEventListener("click", downloadWrongAnswersTxt);
 
 if (!restoreTestProgress()) {
   resetTest("junior", true);

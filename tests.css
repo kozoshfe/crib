@@ -47,6 +47,8 @@ body { margin: 0; min-height: 100vh; background: #fbfaf7; color: #111827; font-f
 .primary-action { min-width: 150px; border: 0; border-radius: 8px; background: #111827; color: #fff; padding: 12px 18px; cursor: pointer; font-family: Arial, sans-serif; font-size: 15px; font-weight: 900; }
 .primary-action:hover { background: #1f2937; }
 .primary-action:disabled { opacity: .45; cursor: not-allowed; }
+.test-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.test-actions .secondary-action { min-height: 43px; }
 .danger-action { border: 0; border-radius: 8px; background: #dc2626; color: #fff; padding: 12px 16px; cursor: pointer; font-family: Arial, sans-serif; font-size: 15px; font-weight: 900; }
 .danger-action:hover { background: #b91c1c; }
 .modal { position: fixed; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: rgba(0,0,0,.45); padding: 20px; }
@@ -97,7 +99,7 @@ body { margin: 0; min-height: 100vh; background: #fbfaf7; color: #111827; font-f
   .question-panel { padding: 20px 14px; }
   .question-panel h1 { font-size: 21px; line-height: 1.28; }
   .answer-option { grid-template-columns: 22px minmax(0, 1fr); gap: 10px; padding: 13px 12px; font-size: 15px; }
-  .primary-action { width: 100%; }
+  .primary-action, .test-actions .secondary-action { width: 100%; }
   .level-checkboxes { grid-template-columns: 1fr; }
   .managed-question-title { white-space: normal; }
 }

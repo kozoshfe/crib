@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QA Tests</title>
-  <link rel="stylesheet" href="tests.css?v=9" />
+  <link rel="stylesheet" href="tests.css?v=10" />
 </head>
 <body>
   <main class="test-page">
@@ -40,7 +40,10 @@
         <h1 id="questionText">Що таке баг?</h1>
         <div id="answersList" class="answers-list"></div>
         <div id="feedback" class="feedback hidden"></div>
-        <button id="answerBtn" class="primary-action" type="button">Відповісти</button>
+        <div class="test-actions">
+          <button id="answerBtn" class="primary-action" type="button">Відповісти</button>
+          <button id="exportWrongTxtBtn" class="secondary-action hidden" type="button">TXT помилок</button>
+        </div>
       </article>
     </section>
   </main>
@@ -94,6 +97,6 @@
   </div>
 
   <script src="tests-all-data.js?v=1"></script>
-  <script src="tests.js?v=14"></script>
+  <script src="tests.js?v=16"></script>
 </body>
 </html>

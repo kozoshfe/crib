@@ -9,23 +9,17 @@
 <body>
   <main class="test-page">
     <div class="book-toolbar">
-      <a class="toolbar-link" href="index.html">Відповіді</a>
-      <button id="logoutBtn" class="logout" type="button">Вийти</button>
-    </div>
-
-    <section class="test-shell" aria-live="polite">
-      <div class="level-tabs" aria-label="Рівень тесту">
-        <button class="level-tab active" type="button" data-level="junior">Junior</button>
-        <button class="level-tab" type="button" data-level="middle">Middle</button>
-        <button class="level-tab" type="button" data-level="senior">Senior</button>
-        <button class="level-tab" type="button" data-level="lead">QA Lead</button>
-        <button class="level-tab" type="button" data-level="all">Всі рівні</button>
-      </div>
-      <div class="test-actions">
+      <div class="toolbar-left">
         <button id="manageBtn" class="secondary-action" type="button">Керувати питаннями</button>
         <button id="shuffleBtn" class="secondary-action" type="button">Перемішати</button>
       </div>
+      <div class="toolbar-right">
+        <a class="toolbar-link" href="index.html">Відповіді</a>
+        <button id="logoutBtn" class="logout" type="button">Вийти</button>
+      </div>
+    </div>
 
+    <section class="test-shell" aria-live="polite">
       <div class="test-topline">
         <div id="questionProgress">Питання 1 / 20</div>
         <div>Правильно: <span id="correctCount">0</span></div>
@@ -71,14 +65,6 @@
             <option value="2">Варіант 3</option>
             <option value="3">Варіант 4</option>
           </select>
-
-          <label>Рівні</label>
-          <div class="level-checkboxes">
-            <label><input type="checkbox" name="testLevel" value="junior" /> Junior</label>
-            <label><input type="checkbox" name="testLevel" value="middle" /> Middle</label>
-            <label><input type="checkbox" name="testLevel" value="senior" /> Senior</label>
-            <label><input type="checkbox" name="testLevel" value="lead" /> QA Lead</label>
-          </div>
 
           <label>Пояснення</label>
           <textarea id="explanationInput" rows="4" placeholder="Коротке пояснення після відповіді"></textarea>

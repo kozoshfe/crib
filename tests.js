@@ -7390,13 +7390,6 @@ const levelQuestionIndexes = {
 };
 const TEST_QUESTIONS_KEY = "qaTestQuestionsAllLevels2026";
 const TEST_PROGRESS_KEY = "qaActiveTestProgressHandbookAll2026";
-const levelLabels = {
-  junior: "Junior",
-  middle: "Middle",
-  senior: "Senior",
-  lead: "QA Lead",
-  all: "Всі рівні"
-};
 const allLevelQuestions = Array.isArray(window.ALL_LEVEL_TEST_QUESTIONS)
   ? window.ALL_LEVEL_TEST_QUESTIONS.map(normalizeQuestion)
   : [];
@@ -7463,7 +7456,7 @@ function clearTestProgress() {
   localStorage.removeItem(TEST_PROGRESS_KEY);
 }
 
-let activeLevel = "junior";
+let activeLevel = "all";
 let activeQuestions = [];
 let currentIndex = 0;
 let selectedIndex = null;
@@ -7472,7 +7465,6 @@ let correctCount = 0;
 let testQuestions = loadTestQuestions();
 let editingQuestionId = null;
 
-const levelTabs = document.querySelectorAll(".level-tab");
 const shuffleBtn = document.getElementById("shuffleBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const manageBtn = document.getElementById("manageBtn");
@@ -7504,8 +7496,7 @@ function shuffleList(list) {
   return shuffled;
 }
 function buildLevelQuestions(level) {
-  if (level === "all") return testQuestions;
-  return testQuestions.filter(question => question.levels.includes(level));
+  return testQuestions;
 }
 function findQuestionById(id) {
   return testQuestions.find(question => question.id === id)
@@ -7525,14 +7516,8 @@ function resetTest(level = activeLevel, shouldShuffle = true, shouldSave = true)
   selectedIndex = null;
   answered = false;
   correctCount = 0;
-  renderLevelTabs();
   renderQuestion();
   if (shouldSave) saveTestProgress(false);
-}
-function renderLevelTabs() {
-  levelTabs.forEach(tab => {
-    tab.classList.toggle("active", tab.dataset.level === activeLevel);
-  });
 }
 function renderQuestion(options = {}) {
   const keepState = Boolean(options.keepState);
@@ -7588,10 +7573,10 @@ function buildAnswerFeedback(item, isCorrect) {
   const selectedAnswer = selectedIndex !== null ? item.answers[selectedIndex] || "" : "";
 
   if (isCorrect) {
-    return `Правильно. Чому це правильна відповідь: ${item.explanation}`;
+    return `Правильно : ${item.explanation}`;
   }
 
-  return `Неправильно. Твоя відповідь: ${selectedAnswer}. Правильна відповідь: ${correctAnswer}. Чому: ${item.explanation}`;
+  return `Правильна відповідь: ${correctAnswer}. Чому: ${item.explanation}`;
 }
 
 function renderAnsweredState() {
@@ -7618,14 +7603,13 @@ function restoreTestProgress() {
     const restoredQuestions = saved.questionIds.map(findQuestionById);
     if (!restoredQuestions.length || restoredQuestions.some(question => !question)) return false;
 
-    activeLevel = levelLabels[saved.level] ? saved.level : "junior";
+    activeLevel = "all";
     activeQuestions = restoredQuestions;
     currentIndex = Math.min(Math.max(Number(saved.currentIndex) || 0, 0), activeQuestions.length - 1);
     selectedIndex = Number.isInteger(saved.selectedIndex) ? saved.selectedIndex : null;
     answered = Boolean(saved.answered);
     correctCount = Math.max(Number(saved.correctCount) || 0, 0);
 
-    renderLevelTabs();
     if (saved.completed) {
       renderResult(false);
     } else {
@@ -7638,14 +7622,6 @@ function restoreTestProgress() {
   }
 }
 
-function getSelectedLevels() {
-  return Array.from(document.querySelectorAll("input[name='testLevel']:checked")).map(input => input.value);
-}
-function setSelectedLevels(levels) {
-  document.querySelectorAll("input[name='testLevel']").forEach(input => {
-    input.checked = levels.includes(input.value);
-  });
-}
 function resetManagedQuestionForm() {
   editingQuestionId = null;
   questionIdInput.value = "";
@@ -7653,18 +7629,15 @@ function resetManagedQuestionForm() {
   answerInputs.forEach(input => { input.value = ""; });
   correctAnswerSelect.value = "0";
   explanationInput.value = "";
-  setSelectedLevels([activeLevel === "all" ? "junior" : activeLevel]);
   deleteManagedQuestionBtn.classList.add("hidden");
   renderManagedQuestionList();
   testQuestionInput.focus();
 }
 function renderManagedQuestionList() {
   questionList.innerHTML = testQuestions.map(question => {
-    const levels = question.levels.map(level => levelLabels[level] || level).join(", ");
     return `
       <button class="managed-question${question.id === editingQuestionId ? " active" : ""}" type="button" data-id="${escapeHtml(question.id)}">
         <span class="managed-question-title">${escapeHtml(question.question || "Без питання")}</span>
-        <span class="managed-question-levels">${escapeHtml(levels)}</span>
       </button>
     `;
   }).join("");
@@ -7680,7 +7653,6 @@ function editManagedQuestion(id) {
   });
   correctAnswerSelect.value = String(question.correctIndex);
   explanationInput.value = question.explanation || "";
-  setSelectedLevels(question.levels);
   deleteManagedQuestionBtn.classList.remove("hidden");
   renderManagedQuestionList();
 }
@@ -7695,10 +7667,9 @@ function saveManagedQuestion(event) {
   event.preventDefault();
   const questionTextValue = testQuestionInput.value.trim();
   const answers = answerInputs.map(input => input.value.trim());
-  const levels = getSelectedLevels();
 
-  if (!questionTextValue || answers.some(answer => !answer) || !explanationInput.value.trim() || !levels.length) {
-    alert("Заповни питання, 4 відповіді, пояснення і вибери хоча б один рівень.");
+  if (!questionTextValue || answers.some(answer => !answer) || !explanationInput.value.trim()) {
+    alert("Заповни питання, 4 відповіді і пояснення.");
     return;
   }
 
@@ -7708,7 +7679,7 @@ function saveManagedQuestion(event) {
     answers,
     correctIndex: Number(correctAnswerSelect.value),
     explanation: explanationInput.value.trim(),
-    levels
+    levels: ["all"]
   };
 
   if (editingQuestionId) {
@@ -7788,9 +7759,6 @@ function renderResult(shouldSave = true) {
   if (shouldSave) saveTestProgress(true);
 }
 
-levelTabs.forEach(tab => {
-  tab.addEventListener("click", () => resetTest(tab.dataset.level));
-});
 shuffleBtn.addEventListener("click", () => resetTest(activeLevel, true));
 manageBtn.addEventListener("click", openManager);
 closeManageModal.addEventListener("click", closeManager);
@@ -7825,5 +7793,5 @@ answerBtn.addEventListener("click", () => {
 });
 
 if (!restoreTestProgress()) {
-  resetTest("junior", true);
+  resetTest("all", true);
 }

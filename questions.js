@@ -2,6 +2,95 @@ const LOCAL_CATEGORIES_KEY = "qaCategorizedQuestionsCategories";
 const LOCAL_QUESTIONS_KEY = "qaCategorizedQuestionsItems";
 const LOCAL_ACTIVE_KEY = "qaCategorizedQuestionsActive";
 const LOCAL_UNCOVERED_FILTER_KEY = "qaCategorizedQuestionsUncoveredOnly";
+const LOCAL_DATA_VERSION_KEY = "qaCategorizedQuestionsDataVersion";
+const FORCE_CLEAN_SYNC_KEY = "qaCategorizedQuestionsForceCleanSync";
+const STANDALONE_QUESTIONS_DATA_VERSION = "handbook-sync-manual-2026-07-08";
+const MAIN_CATEGORIES = window.PREFILLED_CATEGORIES || [];
+const MAIN_QUESTIONS = window.PREFILLED_QUESTIONS || [];
+
+function readStoredArray(key) {
+  try {
+    const value = JSON.parse(localStorage.getItem(key) || "null");
+    return Array.isArray(value) ? value : [];
+  } catch (error) {
+    return [];
+  }
+}
+function handbookQuestionKey(question) {
+  return `${question.categoryId}::${question.question}`;
+}
+function stableHash(text) {
+  let hash = 0;
+  for (let i = 0; i < text.length; i++) {
+    hash = ((hash << 5) - hash) + text.charCodeAt(i);
+    hash |= 0;
+  }
+  return Math.abs(hash).toString(36);
+}
+function handbookQuestionId(question) {
+  return `handbook-question-${stableHash(handbookQuestionKey(question))}`;
+}
+function isHandbookMirrorQuestion(question) {
+  return question?.source === "handbook"
+    || String(question?.id || "").startsWith("handbook-question-");
+}
+function buildQuestionBankFromHandbook(sourceCategories = MAIN_CATEGORIES, sourceQuestions = MAIN_QUESTIONS, existingCategories = [], existingQuestions = []) {
+  const handbookCategoryIds = new Set(sourceCategories.map(category => category.id));
+  const handbookQuestionKeys = new Set(sourceQuestions.map(handbookQuestionKey));
+  const existingByKey = new Map(existingQuestions.map(question => [handbookQuestionKey(question), question]));
+  const manualCategories = existingCategories.filter(category => !handbookCategoryIds.has(category.id));
+  const manualQuestions = existingQuestions.filter(question => {
+    if (isHandbookMirrorQuestion(question)) return false;
+    return !handbookQuestionKeys.has(handbookQuestionKey(question));
+  });
+
+  const nextCategories = [
+    ...sourceCategories.map(category => ({ ...category, source: "handbook" })),
+    ...manualCategories
+  ];
+  const nextQuestions = sourceQuestions.map(question => {
+    const existing = existingByKey.get(handbookQuestionKey(question));
+    return {
+      ...existing,
+      id: handbookQuestionId(question),
+      source: "handbook",
+      categoryId: question.categoryId,
+      question: question.question,
+      note: existing?.note || "",
+      done: true,
+      coveredBy: handbookQuestionKey(question),
+      createdAt: existing?.createdAt || ""
+    };
+  }).concat(manualQuestions);
+
+  return { categories: nextCategories, questions: nextQuestions };
+}
+
+function getSyncedQuestionBankFromStorage() {
+  return buildQuestionBankFromHandbook(
+    MAIN_CATEGORIES,
+    MAIN_QUESTIONS,
+    readStoredArray(LOCAL_CATEGORIES_KEY),
+    readStoredArray(LOCAL_QUESTIONS_KEY)
+  );
+}
+
+function writeQuestionBankToLocalStorage(bank) {
+  const savedActiveCategoryId = localStorage.getItem(LOCAL_ACTIVE_KEY);
+  const nextActiveCategoryId = bank.categories.some(category => category.id === savedActiveCategoryId)
+    ? savedActiveCategoryId
+    : bank.categories[0]?.id || "";
+
+  localStorage.setItem(LOCAL_CATEGORIES_KEY, JSON.stringify(bank.categories));
+  localStorage.setItem(LOCAL_QUESTIONS_KEY, JSON.stringify(bank.questions));
+  localStorage.setItem(LOCAL_ACTIVE_KEY, nextActiveCategoryId);
+  localStorage.setItem(LOCAL_DATA_VERSION_KEY, STANDALONE_QUESTIONS_DATA_VERSION);
+}
+
+if (localStorage.getItem(LOCAL_DATA_VERSION_KEY) !== STANDALONE_QUESTIONS_DATA_VERSION) {
+  writeQuestionBankToLocalStorage(getSyncedQuestionBankFromStorage());
+  localStorage.setItem(FORCE_CLEAN_SYNC_KEY, "true");
+}
 
 let categories = JSON.parse(localStorage.getItem(LOCAL_CATEGORIES_KEY)) || window.PREFILLED_STANDALONE_CATEGORIES || [];
 let questions = JSON.parse(localStorage.getItem(LOCAL_QUESTIONS_KEY)) || window.PREFILLED_STANDALONE_QUESTIONS || [];
@@ -21,8 +110,6 @@ const SUPABASE_ROW_ID = "qa-questions-main";
 const HANDBOOK_SUPABASE_TABLE = "qa_handbook_state";
 const HANDBOOK_SUPABASE_ROW_ID = "qa-handbook-main";
 const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
-const MAIN_CATEGORIES = window.PREFILLED_CATEGORIES || [];
-const MAIN_QUESTIONS = window.PREFILLED_QUESTIONS || [];
 let handbookCategories = loadSavedHandbookCategories();
 let handbookQuestions = loadSavedHandbookQuestions();
 
@@ -76,17 +163,36 @@ function applyHandbookState(state) {
   handbookQuestions = state.questions;
   return true;
 }
+function mirrorQuestionsFromHandbook(shouldSync = false) {
+  const bank = buildQuestionBankFromHandbook(handbookCategories, handbookQuestions, categories, questions);
+  categories = bank.categories;
+  questions = bank.questions;
+  activeCategoryId = categories.some(category => category.id === activeCategoryId) ? activeCategoryId : categories[0]?.id || "";
+  saveLocal();
+  localStorage.setItem(LOCAL_DATA_VERSION_KEY, STANDALONE_QUESTIONS_DATA_VERSION);
+  if (shouldSync) {
+    localStorage.setItem(FORCE_CLEAN_SYNC_KEY, "true");
+    scheduleSync();
+  }
+}
 async function hydrateHandbookCoverageSource() {
   handbookCategories = loadSavedHandbookCategories();
   handbookQuestions = loadSavedHandbookQuestions();
 
-  if (!currentUser) return;
+  if (!currentUser) {
+    mirrorQuestionsFromHandbook(false);
+    render();
+    return;
+  }
 
   try {
     const query = `/rest/v1/${HANDBOOK_SUPABASE_TABLE}?id=eq.${encodeURIComponent(HANDBOOK_SUPABASE_ROW_ID)}&select=state,updated_at`;
     const rows = await supabaseJson(query, { headers: { "Accept": "application/json" } });
     const state = Array.isArray(rows) ? rows[0]?.state : null;
-    if (applyHandbookState(state)) renderQuestions();
+    if (applyHandbookState(state)) {
+      mirrorQuestionsFromHandbook(true);
+      render();
+    }
   } catch (error) {
     console.warn("Failed to load handbook answers for coverage", error);
   }
@@ -304,20 +410,23 @@ async function syncToSupabase() {
       render();
       setSyncStatus("Supabase: підтягнув новіші дані");
       updateSaveButtonState("success");
-      return;
+      return true;
     }
 
     const state = getCloudState();
     await upsertRemoteState(state);
     lastRemoteUpdatedAt = state.updatedAt;
     clearLocal();
+    localStorage.removeItem(FORCE_CLEAN_SYNC_KEY);
     setSyncStatus("Supabase: збережено");
     updateSaveButtonState("success");
+    return true;
   } catch (error) {
     console.error(error);
     setSyncStatus("Supabase: " + humanizeSupabaseError(error), true);
     updateSaveButtonState("error");
     setTimeout(() => updateSaveButtonState(), 3000);
+    return false;
   } finally {
     if (syncBtn) syncBtn.disabled = false;
   }

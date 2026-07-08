@@ -9363,8 +9363,10 @@ function matchesKnownQuestionFilter(question) {
 }
 function renderKnownQuestionsList() {
   updateKnownFilterTabs();
-  const sections = Object.entries(levelLabels).map(([level, label]) => {
+  const sections = Object.entries(levelLabels).flatMap(([level, label]) => {
     const levelQuestions = testQuestions.filter(question => question.levels.includes(level) && matchesKnownQuestionFilter(question));
+    if (!levelQuestions.length) return [];
+
     const rows = levelQuestions.map((question, index) => `
       <div class="known-question-row">
         <span class="known-question-text">
@@ -9381,12 +9383,12 @@ function renderKnownQuestionsList() {
     return `
       <section class="known-level">
         <h3 class="known-level-title">${escapeHtml(label)}:</h3>
-        ${rows || `<div class="wrong-review empty"><p>Питань ще немає.</p></div>`}
+        ${rows}
       </section>
     `;
   }).join("");
 
-  knownQuestionsList.innerHTML = sections;
+  knownQuestionsList.innerHTML = sections || `<div class="wrong-review empty"><p>Питань ще немає.</p></div>`;
 }
 function openKnownQuestions() {
   renderKnownQuestionsList();

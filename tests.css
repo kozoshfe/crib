@@ -73,9 +73,12 @@ body { margin: 0; min-height: 100vh; background: #fbfaf7; color: #111827; font-f
 .modal-actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; margin-top: 6px; }
 .known-questions-head { display: flex; align-items: start; justify-content: space-between; gap: 14px; margin-bottom: 18px; }
 .known-questions-head h2 { margin: 0; }
-.known-sync-status { color: #6b7280; font-size: 13px; font-weight: 800; line-height: 1.35; text-align: right; }
-.known-sync-status.error { color: #dc2626; }
+.known-sync-status { display: inline-flex; align-items: center; justify-content: flex-end; gap: 7px; color: #6b7280; font-size: 13px; font-weight: 800; line-height: 1.35; text-align: right; }
+.known-sync-status::before { content: ""; flex: 0 0 auto; width: 9px; height: 9px; border-radius: 50%; background: #9ca3af; box-shadow: 0 0 0 3px rgba(156,163,175,.14); }
+.known-sync-status.error { color: #991b1b; }
+.known-sync-status.error::before { background: #dc2626; box-shadow: 0 0 0 3px rgba(220,38,38,.14); }
 .known-sync-status.success { color: #166534; }
+.known-sync-status.success::before { background: #16a34a; box-shadow: 0 0 0 3px rgba(22,163,74,.14); }
 .known-filter-tabs { display: inline-flex; align-items: center; gap: 4px; flex-wrap: wrap; width: fit-content; margin: -4px 0 18px; border: 1px solid #e5e7eb; border-radius: 8px; background: #f3f4f6; padding: 4px; }
 .known-filter-tab { min-height: 34px; border: 0; border-radius: 6px; background: transparent; color: #4b5563; padding: 8px 14px; cursor: pointer; font-family: Arial, sans-serif; font-size: 13px; font-weight: 900; line-height: 1; transition: background .15s ease, color .15s ease, box-shadow .15s ease; }
 .known-filter-tab:hover { background: #fff; color: #111827; box-shadow: 0 1px 2px rgba(17,24,39,.08); }
@@ -101,7 +104,7 @@ body { margin: 0; min-height: 100vh; background: #fbfaf7; color: #111827; font-f
   .question-panel h1 { font-size: 24px; }
   .wrong-review-head { align-items: stretch; flex-direction: column; }
   .known-questions-head { align-items: stretch; flex-direction: column; }
-  .known-sync-status { text-align: left; }
+  .known-sync-status { justify-content: flex-start; text-align: left; }
   .known-filter-tab { flex: 1 1 calc(33.333% - 8px); }
   .known-question-row { grid-template-columns: 1fr; }
   .known-checkbox { justify-content: flex-start; }

@@ -104,11 +104,16 @@
         <h2>Запитання тестів</h2>
         <div id="knownQuestionsSyncStatus" class="known-sync-status">Supabase: перевірка...</div>
       </div>
+      <div class="known-filter-tabs" aria-label="Фільтр запитань">
+        <button class="known-filter-tab active" type="button" data-filter="">Всі</button>
+        <button class="known-filter-tab" type="button" data-filter="known">Знаю</button>
+        <button class="known-filter-tab" type="button" data-filter="unknown">Не знаю</button>
+      </div>
       <div id="knownQuestionsList" class="known-questions-list"></div>
     </div>
   </div>
 
   <script src="tests-all-data.js?v=1"></script>
-  <script src="tests.js?v=17"></script>
+  <script src="tests.js?v=18"></script>
 </body>
 </html>

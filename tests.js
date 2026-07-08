@@ -9159,6 +9159,7 @@ let activeAnswerOrders = [];
 let testQuestions = loadTestQuestions();
 let editingQuestionId = null;
 let knownQuestionStatus = loadKnownQuestionStatus();
+let knownQuestionFilter = "";
 let knownSyncTimer = null;
 
 const levelTabs = document.querySelectorAll(".level-tab");
@@ -9172,6 +9173,7 @@ const knownQuestionsModal = document.getElementById("knownQuestionsModal");
 const closeKnownQuestionsModal = document.getElementById("closeKnownQuestionsModal");
 const knownQuestionsList = document.getElementById("knownQuestionsList");
 const knownQuestionsSyncStatus = document.getElementById("knownQuestionsSyncStatus");
+const knownFilterTabs = document.querySelectorAll(".known-filter-tab");
 const questionList = document.getElementById("questionList");
 const questionForm = document.getElementById("questionForm");
 const questionIdInput = document.getElementById("questionId");
@@ -9348,9 +9350,21 @@ function scheduleKnownQuestionSync() {
     }
   }, 500);
 }
+function updateKnownFilterTabs() {
+  knownFilterTabs.forEach(tab => {
+    tab.classList.toggle("active", tab.dataset.filter === knownQuestionFilter);
+  });
+}
+function matchesKnownQuestionFilter(question) {
+  const isKnown = Boolean(knownQuestionStatus[question.id]);
+  if (knownQuestionFilter === "known") return isKnown;
+  if (knownQuestionFilter === "unknown") return !isKnown;
+  return true;
+}
 function renderKnownQuestionsList() {
+  updateKnownFilterTabs();
   const sections = Object.entries(levelLabels).map(([level, label]) => {
-    const levelQuestions = testQuestions.filter(question => question.levels.includes(level));
+    const levelQuestions = testQuestions.filter(question => question.levels.includes(level) && matchesKnownQuestionFilter(question));
     const rows = levelQuestions.map((question, index) => `
       <label class="known-question-row">
         <span class="known-question-text">
@@ -9381,6 +9395,10 @@ function openKnownQuestions() {
 }
 function closeKnownQuestions() {
   knownQuestionsModal.classList.add("hidden");
+}
+function setKnownQuestionFilter(filter) {
+  knownQuestionFilter = filter;
+  renderKnownQuestionsList();
 }
 function setKnownQuestion(questionId, isKnown) {
   if (isKnown) knownQuestionStatus[questionId] = true;
@@ -9809,6 +9827,9 @@ manageModal.addEventListener("click", event => {
 });
 knownQuestionsModal.addEventListener("click", event => {
   if (event.target === knownQuestionsModal) closeKnownQuestions();
+});
+knownFilterTabs.forEach(tab => {
+  tab.addEventListener("click", () => setKnownQuestionFilter(tab.dataset.filter || ""));
 });
 knownQuestionsList.addEventListener("change", event => {
   const checkbox = event.target.closest("input[type='checkbox'][data-question-id]");

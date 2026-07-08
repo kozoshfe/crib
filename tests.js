@@ -5699,7 +5699,1687 @@ const defaultTestQuestions = [
         "lead"
       ]
     }
- 
+ ,
+  {
+    "id": "junior-2026-96",
+    "question": "API: Junior QA відправив GET /profile і отримав 200 OK. Що ще треба перевірити?",
+    "answers": [
+      "Нічого, статусу 200 достатньо",
+      "Body response: правильний user id, поля профілю, типи даних, відсутність чужих/sensitive даних і поведінку без авторизації",
+      "Тільки час відповіді браузера",
+      "Тільки що endpoint відкривається в Swagger"
+    ],
+    "correctIndex": 1,
+    "explanation": "У Manual QA API-перевірка не закінчується HTTP 200. Треба дивитись зміст відповіді, права доступу, типи даних і чи не повертаються зайві персональні дані.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-97",
+    "question": "SQL: яке базове SQL-знання найкорисніше Junior Manual QA?",
+    "answers": [
+      "Вміти виконувати DELETE в production",
+      "Вміти через SELECT і WHERE знайти тестовий запис, перевірити статус, дату, user_id або створені дані",
+      "Знати тільки, що SQL існує",
+      "Вміти змінювати дані без погодження"
+    ],
+    "correctIndex": 1,
+    "explanation": "Junior Manual QA часто достатньо безпечних read-only запитів. SELECT/WHERE допомагають підтвердити, що дія в UI/API реально створила або змінила потрібні дані.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-98",
+    "question": "Mobile: що Junior QA має вказати в баг-репорті для проблеми тільки на телефоні?",
+    "answers": [
+      "Тільки “на телефоні не працює”",
+      "Модель, OS version, app version/build, network, orientation, кроки, actual/expected, screenshot/video і frequency",
+      "Тільки назву застосунку",
+      "Тільки скріншот без кроків"
+    ],
+    "correctIndex": 1,
+    "explanation": "Mobile дефекти часто залежать від пристрою, ОС, build, мережі й стану застосунку. Без цього розробнику складно відтворити проблему.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-99",
+    "question": "Web: що перевірити, якщо кнопка працює на desktop, але погано на mobile web?",
+    "answers": [
+      "Тільки колір кнопки",
+      "Responsive layout, tap area, overlap з іншими елементами, viewport, keyboard behavior, scroll і browser compatibility",
+      "Тільки Chrome desktop",
+      "Нічого, mobile web не стосується web testing"
+    ],
+    "correctIndex": 1,
+    "explanation": "Web testing включає адаптивність. На mobile web часто ламаються tap area, fixed headers, keyboard, scroll, overlap і різні браузери.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-100",
+    "question": "Bug-report: який заголовок бага найкращий?",
+    "answers": [
+      "“Не працює”",
+      "“Checkout: payment fails with 500 error for Visa card after applying promo code”",
+      "“Терміново!!!”",
+      "“Баг у задачі”"
+    ],
+    "correctIndex": 1,
+    "explanation": "Сильний title коротко показує модуль, дію, симптом і умову. Це допомагає triage ще до відкриття повного опису бага.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-101",
+    "question": "Test-design: для поля “ім’я” що краще перевірити, крім звичайного валідного імені?",
+    "answers": [
+      "Тільки “Ivan”",
+      "Порожнє значення, мін/макс довжину, пробіли, дефіс/апостроф, кирилицю/латиницю, emoji/special chars і error messages",
+      "Тільки колір рамки поля",
+      "Тільки copy/paste"
+    ],
+    "correctIndex": 1,
+    "explanation": "Test design для input поля включає позитивні, негативні, boundary і localization cases. Так QA знаходить проблеми валідації й UX.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-102",
+    "question": "Release: що Junior QA має зробити перед тим, як сказати “перевірено”?",
+    "answers": [
+      "Просто написати “done” в чат",
+      "Переконатися, що scope пройдений, bugs заведені/оновлені, blockers названі, evidence додано і ризики/неперевірене явно повідомлені",
+      "Видалити свої нотатки",
+      "Закрити всі баги"
+    ],
+    "correctIndex": 1,
+    "explanation": "QA status має бути прозорим: що перевірено, що ні, які дефекти й ризики залишились. Це краще за коротке “done”, яке не дає контексту.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-103",
+    "question": "Leadership: як Junior QA може показати відповідальність без ролі Lead?",
+    "answers": [
+      "Мовчати, якщо бачить ризик",
+      "Вчасно піднімати блокери, ставити уточнювальні питання, пропонувати тестові ідеї і чесно повідомляти статус/ризики",
+      "Приймати рішення за PM без контексту",
+      "Брати всі задачі й не просити допомоги"
+    ],
+    "correctIndex": 1,
+    "explanation": "Leadership на Junior рівні - це не керування людьми, а відповідальна поведінка: прозора комунікація, питання, ініціатива й уважність до ризиків.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "middle-2026-96",
+    "question": "API: як Middle Manual QA має тестувати endpoint створення замовлення?",
+    "answers": [
+      "Тільки один POST з валідними даними",
+      "Happy path, required/optional fields, validation errors, auth, duplicate submit, idempotency, response body, DB/result у UI і logs/request id",
+      "Тільки статус 201",
+      "Тільки Swagger documentation"
+    ],
+    "correctIndex": 1,
+    "explanation": "Middle Manual QA має бачити API як бізнес-flow. Важливі не лише статуси, а й валідація, авторизація, дублікати, результат у даних/UI і діагностика через request id.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-97",
+    "question": "SQL: коли Middle QA корисний JOIN?",
+    "answers": [
+      "Коли треба видалити тестові дані без погодження",
+      "Коли треба зв’язати дані з кількох таблиць, наприклад users, orders і payments, щоб перевірити бізнес-результат",
+      "Коли треба перевірити тільки UI layout",
+      "JOIN не потрібен Manual QA ніколи"
+    ],
+    "correctIndex": 1,
+    "explanation": "JOIN допомагає Manual QA перевіряти наскрізні сценарії: хто створив замовлення, який payment status, яка сума і чи відповідають дані UI/API.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-98",
+    "question": "Mobile: що Middle QA має перевірити для offline/poor network сценарію?",
+    "answers": [
+      "Тільки що показується loader",
+      "Збереження введених даних, retry, duplicate submit, user message, sync після відновлення мережі, conflict handling і logs",
+      "Тільки airplane mode icon",
+      "Нічого, бо мережа не частина застосунку"
+    ],
+    "correctIndex": 1,
+    "explanation": "Poor network часто відкриває реальні дефекти: дублікати, втрата даних, зависання, неправильний стан після sync. Middle QA має перевіряти весь recovery flow.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-99",
+    "question": "Web: що перевірити для форми з autosave?",
+    "answers": [
+      "Тільки що текст вводиться",
+      "Debounce/timing, saved indicator, refresh/back navigation, offline, validation, concurrent edit, server error і чи не губляться дані",
+      "Тільки placeholder",
+      "Тільки колір кнопки Save"
+    ],
+    "correctIndex": 1,
+    "explanation": "Autosave має ризики втрати даних і неконсистентного стану. Manual QA має перевірити timing, помилки, навігацію, offline і конфлікти.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-100",
+    "question": "Bug-report: що додати до бага “іноді payment зависає”?",
+    "answers": [
+      "Тільки слово “іноді”",
+      "Frequency, card/payment method, сума, user/account, environment, request id, network, відео, response/logs і чи створилась транзакція",
+      "Тільки скріншот loader",
+      "Нічого, розробник сам знайде"
+    ],
+    "correctIndex": 1,
+    "explanation": "Нестабільний payment bug без доказів майже неможливо швидко виправити. Потрібні умови, частота, технічні IDs і бізнес-наслідок.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-101",
+    "question": "Test-design: коли pairwise testing доречний для Manual QA?",
+    "answers": [
+      "Коли є одна кнопка і один сценарій",
+      "Коли багато параметрів: браузер, мова, роль, країна, валюта, device, і повну матрицю перевірити занадто дорого",
+      "Коли треба перевірити тільки happy path",
+      "Коли немає жодних комбінацій"
+    ],
+    "correctIndex": 1,
+    "explanation": "Pairwise зменшує кількість комбінацій, але зберігає сильне покриття пар параметрів. Це корисно для Manual QA, коли ресурс обмежений.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-102",
+    "question": "Release: часу на повну регресію немає. Який статус має дати Middle QA?",
+    "answers": [
+      "“Все добре”, якщо smoke пройшов",
+      "Risk-based summary: що протестовано, що не протестовано, які дефекти відкриті, які ризики залишились і яка рекомендація",
+      "“Не моя проблема”",
+      "“Релізити не можна” без пояснення"
+    ],
+    "correctIndex": 1,
+    "explanation": "Middle QA має не просто pass/fail, а прозорий релізний статус. Команда повинна бачити coverage, gaps, defects і ризики для рішення.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-103",
+    "question": "Leadership: як Middle QA показує ownership за фічу?",
+    "answers": [
+      "Чекає, поки Senior скаже кожен крок",
+      "Сам аналізує вимоги, уточнює gaps, планує scope, комунікує ризики, веде дефекти до рішення і дає зрозумілий test summary",
+      "Тестує тільки те, що написано в одному тест-кейсі",
+      "Уникає спілкування з PM/Dev"
+    ],
+    "correctIndex": 1,
+    "explanation": "Ownership для Middle QA - це самостійність у межах фічі: аналіз, план, ризики, комунікація, виконання й якісний підсумок.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "senior-2026-96",
+    "question": "API: breaking API change зачіпає web і mobile клієнтів. Що Senior Manual QA має перевірити?",
+    "answers": [
+      "Тільки новий web клієнт",
+      "Backward compatibility, старі mobile versions, optional/required fields, error handling, analytics, cache, feature flags і rollout/rollback plan",
+      "Тільки статус 200 в Postman",
+      "Тільки Swagger нової версії"
+    ],
+    "correctIndex": 1,
+    "explanation": "Senior Manual QA має мислити екосистемою. Breaking API може зламати старі клієнти, аналітику, кеш, мобільні версії й релізний план.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-97",
+    "question": "SQL: що Senior QA має перевірити після складної зміни financial reports?",
+    "answers": [
+      "Тільки що сторінка звіту відкрилась",
+      "Агрегації, фільтри дат, timezone, rounding, currency conversion, duplicates, missing rows і reconciliation з джерелами даних",
+      "Тільки кількість колонок",
+      "Тільки export filename"
+    ],
+    "correctIndex": 1,
+    "explanation": "Financial/reporting тестування потребує data thinking. Senior QA має перевіряти не лише UI, а й формули, джерела, округлення, часові зони й reconciliation.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-98",
+    "question": "Mobile: нова версія app має примусовий update. Які ризики Senior QA має покрити?",
+    "answers": [
+      "Тільки що popup показується",
+      "Old app behavior, store redirect, blocked/optional update, deep links, auth state, offline, localization, rollout by version і fallback при недоступному store",
+      "Тільки текст кнопки Update",
+      "Тільки latest iOS device"
+    ],
+    "correctIndex": 1,
+    "explanation": "Forced update може заблокувати користувачів. Senior QA має перевірити старі версії, rollout, store flows, session, offline і fallback сценарії.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-99",
+    "question": "Web: що Senior QA має перевірити для service worker/PWA після релізу?",
+    "answers": [
+      "Тільки що сайт відкривається",
+      "Update strategy, stale cache, offline behavior, asset versioning, logout/session data, fallback page і різні браузери",
+      "Тільки manifest icon",
+      "Тільки desktop Chrome online"
+    ],
+    "correctIndex": 1,
+    "explanation": "PWA/service worker може залишити старий код або приватні дані в кеші. Senior QA має перевіряти оновлення, offline, session і browser behavior.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-100",
+    "question": "Bug-report: production defect зачепив частину користувачів. Який report очікується від Senior QA?",
+    "answers": [
+      "“У проді баг, терміново”",
+      "Impact, affected segment, severity, timeline, reproduction/evidence, logs/request ids, workaround, rollback/hotfix recommendation і links на monitoring",
+      "Тільки screenshot",
+      "Тільки посилання на задачу"
+    ],
+    "correctIndex": 1,
+    "explanation": "Senior QA report має допомогти incident triage: масштаб, докази, сегмент, workaround, технічні сліди й варіанти зниження impact.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-101",
+    "question": "Test-design: як Senior QA має покрити складну pricing logic?",
+    "answers": [
+      "Перевірити одну покупку з типовою ціною",
+      "Decision table для правил, boundary values для сум/знижок, negative cases, currency/rounding, tax, promo stacking і regression by risk",
+      "Тільки UI label ціни",
+      "Тільки один happy path без промокоду"
+    ],
+    "correctIndex": 1,
+    "explanation": "Pricing logic потребує комбінації технік test design. Senior QA має покрити правила, межі, округлення, валюти, податки, промо і ризикову регресію.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-102",
+    "question": "Release: що має бути в release readiness summary від Senior Manual QA?",
+    "answers": [
+      "Тільки “QA pass”",
+      "Scope, coverage, passed/failed checks, open defects by severity, known risks, untested areas, environments, test data, rollback/monitoring і recommendation",
+      "Тільки кількість тест-кейсів",
+      "Тільки список багів без висновку"
+    ],
+    "correctIndex": 1,
+    "explanation": "Senior QA дає інформацію для рішення, а не просто статус. Release summary має показувати впевненість, ризики й умови релізу.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-103",
+    "question": "Leadership: як Senior QA має менторити Middle QA після слабкого test plan?",
+    "answers": [
+      "Сказати “погано” і переписати все самому",
+      "Дати конкретний feedback по ризиках, gaps, пріоритетах, test data, evidence; показати приклад і домовитись про наступний review",
+      "Публічно критикувати на daily",
+      "Забрати всі складні задачі назавжди"
+    ],
+    "correctIndex": 1,
+    "explanation": "Senior leadership - це розвиток інших через конкретний feedback і приклади. Мета не зробити замість людини, а підняти її рівень мислення.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "lead-2026-96",
+    "question": "API: що QA Lead має включити в manual API testing стандарт для команд?",
+    "answers": [
+      "Тільки перевірку status code 200",
+      "Swagger/Postman collections, auth rules, schema/body checks, negative cases, role permissions, error format, request ids, data validation і evidence стандарт",
+      "Тільки назви endpoint-ів",
+      "Заборонити Manual QA тестувати API"
+    ],
+    "correctIndex": 1,
+    "explanation": "Lead QA має стандартизувати API testing так, щоб Manual QA перевіряли не лише статус, а контракт, права, дані, помилки й могли давати якісний evidence.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-97",
+    "question": "SQL: як QA Lead має організувати безпечну роботу Manual QA з базою даних?",
+    "answers": [
+      "Дати всім повний доступ до production DB",
+      "Read-only доступи, training по SELECT/JOIN, правила безпеки, test data ownership, заборона destructive queries без approval і audit доступів",
+      "Заборонити будь-які SQL перевірки",
+      "Дозволити кожному змінювати дані як зручно"
+    ],
+    "correctIndex": 1,
+    "explanation": "SQL корисний для Manual QA, але потребує governance: read-only доступи, навчання, безпека даних, контроль PII і чіткі правила змін.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-98",
+    "question": "Mobile: що має входити в mobile QA strategy для Manual QA команди?",
+    "answers": [
+      "Тестувати тільки один новий телефон",
+      "Device matrix за analytics, supported OS, мінімальні версії, network states, push/deep links, permissions, app updates, crash logs і release channels",
+      "Тільки emulator testing",
+      "Тільки перевірка UI на головному екрані"
+    ],
+    "correctIndex": 1,
+    "explanation": "Mobile strategy має базуватись на реальних користувачах і ризиках: пристрої, OS, мережа, permissions, push, updates, crash logs і rollout канали.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-99",
+    "question": "Web: що QA Lead має визначити для web compatibility strategy?",
+    "answers": [
+      "Тестувати все у випадковому браузері",
+      "Supported browsers/devices, analytics-based priority, responsive breakpoints, accessibility baseline, critical flows, visual risk areas і regression cadence",
+      "Тільки desktop Chrome latest",
+      "Тільки pixel-perfect перевірку кожної сторінки"
+    ],
+    "correctIndex": 1,
+    "explanation": "Web compatibility strategy має бути risk-based. Lead QA визначає support matrix, пріоритети, critical flows, breakpoints і мінімальний accessibility рівень.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-100",
+    "question": "Bug-report: як QA Lead має підняти якість баг-репортів у команді?",
+    "answers": [
+      "Просто сварити за погані баги",
+      "Ввести template, приклади good/bad reports, severity/priority правила, evidence standard, review sampling і feedback з Dev/Support",
+      "Додати більше обов’язкових полів без навчання",
+      "Дозволити кожному писати як хоче"
+    ],
+    "correctIndex": 1,
+    "explanation": "Якість баг-репортів росте через стандарти, приклади, калібрування й feedback loop. Просто більше полів не робить report корисним.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-101",
+    "question": "Test-design: як QA Lead має розвивати test design у Manual QA команді?",
+    "answers": [
+      "Дати один ISTQB курс і більше не повертатись",
+      "Проводити review тестів, workshops на реальних фічах, приклади BVA/EP/decision tables/state transitions, peer review і матрицю навичок",
+      "Перевіряти тільки кількість тест-кейсів",
+      "Заборонити exploratory testing"
+    ],
+    "correctIndex": 1,
+    "explanation": "Test design навчається практикою. Lead QA має розвивати техніки через реальні задачі, review, приклади, peer learning і вимірювання прогресу.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-102",
+    "question": "Release: що QA Lead має стандартизувати для release readiness?",
+    "answers": [
+      "Тільки фразу “QA approved”",
+      "Release checklist, entry/exit criteria, risk summary format, defect thresholds, rollback/monitoring readiness, owners і правила прийняття known risks",
+      "Тільки кількість виконаних тест-кейсів",
+      "Тільки approval від одного QA"
+    ],
+    "correctIndex": 1,
+    "explanation": "Release readiness має бути повторюваним процесом. Lead QA визначає критерії, формат ризиків, дефекти, rollback, monitoring і хто приймає залишковий ризик.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-103",
+    "question": "Leadership: що QA Lead має зробити, якщо Manual QA команда сильна у виконанні, але слабка в аналізі ризиків?",
+    "answers": [
+      "Давати їм тільки готові чеклісти",
+      "Ввести risk review на refinements, mentoring, приклади risk-based scope, ownership за фічі, post-release learning і оцінку не лише execution, а й thinking",
+      "Замінити всю команду",
+      "Ігнорувати, якщо баги все одно знаходяться"
+    ],
+    "correctIndex": 1,
+    "explanation": "Lead QA має піднімати команду від execution до thinking. Це робиться через практику risk review, ownership, mentoring і аналіз production lessons.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "junior-2026-104",
+    "question": "Requirements: у вимозі написано “сторінка має швидко відкриватись”. Що має зробити Junior QA?",
+    "answers": [
+      "Прийняти вимогу як зрозумілу",
+      "Уточнити вимірюваний критерій: для яких сторінок, на яких пристроях/мережі і який максимальний час завантаження очікується",
+      "Тестувати тільки на своєму ноутбуці",
+      "Створити баг без уточнення очікувань"
+    ],
+    "correctIndex": 1,
+    "explanation": "“Швидко” не є тестованим критерієм. Manual QA має перетворювати нечіткі слова на вимірювані acceptance criteria, інакше результат буде суб’єктивним.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-105",
+    "question": "E-commerce: що перевірити при додаванні товару в кошик?",
+    "answers": [
+      "Тільки що кнопка Add to cart натискається",
+      "Кількість, ціну, валюту, stock status, варіанти товару, повторне додавання, guest/login state і відображення в cart summary",
+      "Тільки картинку товару",
+      "Тільки назву товару"
+    ],
+    "correctIndex": 1,
+    "explanation": "Cart flow має бізнес-ризики: неправильна ціна, кількість, валюта, варіант товару або stock можуть прямо вплинути на покупку.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-106",
+    "question": "Fintech: що найважливіше перевірити після поповнення балансу?",
+    "answers": [
+      "Тільки що екран success показався",
+      "Суму, валюту, комісію, transaction status, оновлення балансу, історію операцій і поведінку при refresh/relogin",
+      "Тільки колір success screen",
+      "Тільки текст кнопки Done"
+    ],
+    "correctIndex": 1,
+    "explanation": "У фінансових сценаріях success screen недостатній. Потрібно перевірити дані, баланс, історію, статус і консистентність після оновлення стану.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-107",
+    "question": "SaaS/Admin: що перевірити після створення нового користувача адміністратором?",
+    "answers": [
+      "Тільки що користувач з’явився в списку",
+      "Role, permissions, email invite, login ability, default settings, audit log і чи не має користувач зайвих доступів",
+      "Тільки avatar",
+      "Тільки сортування списку"
+    ],
+    "correctIndex": 1,
+    "explanation": "Admin actions часто зачіпають доступи й безпеку. QA має перевіряти не лише створення запису, а роль, invite, login і audit trail.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-108",
+    "question": "Localization: що перевірити для форми з датою народження в різних локалях?",
+    "answers": [
+      "Тільки переклад label",
+      "Формат дати, validation, календар, placeholder, error message, збережене значення і відображення після reload",
+      "Тільки колір календаря",
+      "Тільки desktop версію"
+    ],
+    "correctIndex": 1,
+    "explanation": "Локалізація дати часто ламає validation і збереження. Manual QA має перевірити і UI, і фактично збережене/відображене значення.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-109",
+    "question": "Accessibility: як перевірити форму логіну без спеціальних інструментів?",
+    "answers": [
+      "Тільки подивитись на дизайн",
+      "Пройти форму клавіатурою, перевірити focus order, видимий focus, labels, error message і можливість submit без мишки",
+      "Тільки змінити zoom браузера",
+      "Нічого, accessibility не для Junior QA"
+    ],
+    "correctIndex": 1,
+    "explanation": "Базова accessibility перевірка доступна Manual QA: клавіатура, фокус, labels і помилки. Це часто знаходить реальні UX дефекти.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-110",
+    "question": "Test data: чому погано використовувати один спільний акаунт для всіх QA?",
+    "answers": [
+      "Бо його важко запам’ятати",
+      "Дані змінюються різними людьми, тести впливають один на одного, результати стають нестабільними і важко відтворювати дефекти",
+      "Бо один акаунт завжди швидший",
+      "Це не проблема для тестування"
+    ],
+    "correctIndex": 1,
+    "explanation": "Спільний акаунт створює нестабільний стан. Для надійного тестування потрібні контрольовані ролі, дані й правила їх відновлення.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-111",
+    "question": "Communication: dev каже “у мене працює”. Що Junior QA має відповісти?",
+    "answers": [
+      "“Ти неправий”",
+      "Надати environment, build version, steps, test data, video/logs і запропонувати разом відтворити на тому ж середовищі",
+      "Закрити баг одразу",
+      "Створити дублікат бага"
+    ],
+    "correctIndex": 1,
+    "explanation": "Сильна QA-комунікація спирається на факти. Якщо у dev працює, треба синхронізувати середовище, дані й кроки, а не сперечатись емоційно.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-112",
+    "question": "Privacy: що перевірити, якщо сторінка профілю показує email і phone?",
+    "answers": [
+      "Тільки що текст видно",
+      "Чи ці дані бачить тільки правильний користувач/роль, чи вони не потрапляють у URL, logs, screenshots або чужий акаунт",
+      "Тільки формат шрифту",
+      "Нічого, це просто текст"
+    ],
+    "correctIndex": 1,
+    "explanation": "Email і phone - персональні дані. Manual QA має думати про доступи, витік у URL/логи й відображення чужих даних.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-113",
+    "question": "Negative testing: що перевірити для поля coupon code?",
+    "answers": [
+      "Тільки валідний купон",
+      "Expired, already used, wrong user, lowercase/uppercase, spaces, special chars, empty value і повідомлення про помилку",
+      "Тільки колір поля",
+      "Тільки copy/paste"
+    ],
+    "correctIndex": 1,
+    "explanation": "Coupon logic часто має edge cases. Negative testing допомагає знайти неправильні знижки, повторне використання або погані error messages.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "middle-2026-104",
+    "question": "Requirements: acceptance criteria описують happy path checkout, але не помилки оплати. Що робить Middle QA?",
+    "answers": [
+      "Тестує тільки happy path, бо так написано",
+      "Піднімає missing scenarios: declined card, timeout, insufficient funds, retry, duplicate charge, user message і transaction status",
+      "Блокує задачу без пояснення",
+      "Відкладає питання до production"
+    ],
+    "correctIndex": 1,
+    "explanation": "Middle QA має бачити gaps у вимогах і пропонувати конкретні сценарії. Для payment flow error paths часто важливіші за happy path.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-105",
+    "question": "E-commerce: як тестувати promo stacking, якщо є coupon, sale price і loyalty discount?",
+    "answers": [
+      "Перевірити один купон на одному товарі",
+      "Побудувати decision table: які знижки комбінуються, порядок застосування, rounding, max discount, excluded products і error messages",
+      "Перевірити тільки UI badge Sale",
+      "Тестувати випадкові комбінації без очікуваного результату"
+    ],
+    "correctIndex": 1,
+    "explanation": "Знижки - класичний випадок для decision table. Middle QA має уточнити правила комбінування й перевірити порядок розрахунку.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-106",
+    "question": "Fintech: після failed payment користувач бачить “pending”. Що перевірити?",
+    "answers": [
+      "Тільки текст pending",
+      "Фінальний статус, чи списались гроші, retry/reconciliation, історію транзакцій, повідомлення користувачу, support trace і logs/request id",
+      "Тільки колір статусу",
+      "Нічого, pending завжди нормальний"
+    ],
+    "correctIndex": 1,
+    "explanation": "Payment state має бути консистентним. Pending після failure може означати race, async processing або reconciliation gap, тому потрібна перевірка даних і слідів.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-107",
+    "question": "SaaS/Admin: як тестувати зміну ролі користувача з Editor на Viewer?",
+    "answers": [
+      "Тільки перевірити назву ролі в профілі",
+      "UI permissions, direct URL/API access, old session, cache, audit log, notifications і чи зникли edit actions після refresh/relogin",
+      "Тільки logout/login",
+      "Тільки колір role badge"
+    ],
+    "correctIndex": 1,
+    "explanation": "Role change має security-ризики. Middle QA перевіряє не лише UI, а й старі сесії, кеш, direct access і audit log.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-108",
+    "question": "Localization: продукт підтримує арабську мову. Що додатково треба перевірити?",
+    "answers": [
+      "Тільки переклад тексту",
+      "RTL layout, alignment, truncation, mixed English/Arabic text, numbers/dates, input fields, icons direction і responsive behavior",
+      "Тільки головну сторінку",
+      "Тільки desktop Chrome"
+    ],
+    "correctIndex": 1,
+    "explanation": "RTL локалі змінюють не лише текст, а й напрям layout, іконки, поля вводу, числа, дати й адаптивність.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-109",
+    "question": "Accessibility: що Middle QA має перевірити в modal dialog?",
+    "answers": [
+      "Тільки що modal відкрився",
+      "Focus trap, Esc close, keyboard navigation, screen-reader label/title, backdrop behavior, scroll lock і повернення focus після закриття",
+      "Тільки shadow навколо modal",
+      "Тільки desktop mouse click"
+    ],
+    "correctIndex": 1,
+    "explanation": "Modal має бути керований клавіатурою й зрозумілий assistive technologies. Focus trap і повернення focus - часті accessibility дефекти.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-110",
+    "question": "Test data: для regression потрібні користувачі з різними станами KYC. Як краще організувати?",
+    "answers": [
+      "Шукати випадкові акаунти вручну перед кожним тестом",
+      "Мати контрольований набір акаунтів/даних за станами: unverified, pending, approved, rejected, expired, з правилами reset/ownership",
+      "Використовувати один акаунт і міняти його стан вручну",
+      "Тестувати тільки approved user"
+    ],
+    "correctIndex": 1,
+    "explanation": "Для стабільної regression потрібні передбачувані test data states. KYC має багато станів, і кожен може відкривати різні ризики.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-111",
+    "question": "Communication: PM просить “не заводити low priority баги перед релізом”. Як діяти Middle QA?",
+    "answers": [
+      "Приховати всі low priority дефекти",
+      "Уточнити правило triage, фіксувати дефекти з правильним priority/severity, відділити release blockers від backlog issues і прозоро показати ризики",
+      "Поставити всім багам High priority",
+      "Не тестувати дрібні сценарії"
+    ],
+    "correctIndex": 1,
+    "explanation": "Не всі дефекти блокують реліз, але приховувати їх не можна. Middle QA має коректно класифікувати й комунікувати ризики.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-112",
+    "question": "Privacy: що перевірити при export користувачів у CSV?",
+    "answers": [
+      "Тільки що файл завантажився",
+      "Permissions, PII fields, masking, filters, audit log, filename, secure download, data retention і чи немає зайвих колонок",
+      "Тільки кількість рядків",
+      "Тільки розширення .csv"
+    ],
+    "correctIndex": 1,
+    "explanation": "CSV export може витягнути персональні дані. Middle QA має перевірити доступи, склад колонок, audit і відповідність вибраним фільтрам.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-113",
+    "question": "Bad situation: staging недоступний за 2 години до релізного тестування. Що робить Middle QA?",
+    "answers": [
+      "Мовчки чекає",
+      "Фіксує blocker, impact на release testing, залучає owner-а environment, уточнює ETA, пропонує fallback перевірки і оновлює stakeholders",
+      "Створює product bug на кожен failed test",
+      "Переходить тестувати production без погодження"
+    ],
+    "correctIndex": 1,
+    "explanation": "Environment blocker треба комунікувати як ризик для релізу. Middle QA має показати impact, owner-а, fallback і оновлювати статус.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "senior-2026-104",
+    "question": "Requirements: бізнес хоче “як Amazon checkout”. Як Senior QA має працювати з такою вимогою?",
+    "answers": [
+      "Прийняти як достатній опис",
+      "Розкласти на конкретні flows, business rules, edge cases, payments, addresses, taxes, errors, platforms і acceptance criteria з прикладами",
+      "Тестувати на власний смак",
+      "Попросити розробника здогадатись"
+    ],
+    "correctIndex": 1,
+    "explanation": "Посилання на відомий продукт не замінює вимоги. Senior QA має перетворити аналогію на тестовані правила й сценарії.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-105",
+    "question": "E-commerce: після релізу знижок revenue впав, але тести пройшли. Що робить Senior QA?",
+    "answers": [
+      "Сказати, що QA не винен",
+      "Аналізує impacted segments, pricing rules, analytics events, A/B/feature flags, orders data, refunds, conversion funnel і gaps у test coverage",
+      "Ігнорує бізнес-метрики",
+      "Перевіряє тільки UI cart"
+    ],
+    "correctIndex": 1,
+    "explanation": "Senior QA має враховувати product metrics. Зелені тести не гарантують, що pricing/discount logic не зламала revenue або conversion.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-106",
+    "question": "Fintech: як Senior QA має тестувати ліміти переказів?",
+    "answers": [
+      "Один переказ у межах ліміту",
+      "Daily/monthly limits, per-transaction limit, currency, KYC level, user role, timezone reset, concurrent transfers, fees і error messages",
+      "Тільки кнопку Transfer",
+      "Тільки UI success state"
+    ],
+    "correctIndex": 1,
+    "explanation": "Ліміти - це правила з багатьма вимірами. Senior QA має покрити межі, час, валюту, KYC, конкуренцію і фінансову консистентність.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-107",
+    "question": "SaaS/Admin: що Senior QA має перевірити для audit log у regulated продукті?",
+    "answers": [
+      "Тільки що запис з’явився",
+      "Completeness, immutability, actor/action/target, before/after values, timestamp timezone, filtering/export, permissions і retention rules",
+      "Тільки колір таблиці",
+      "Тільки перший запис у списку"
+    ],
+    "correctIndex": 1,
+    "explanation": "Audit log у regulated продуктах є доказом дій. Senior QA має перевірити повноту, незмінність, доступи, export і зберігання.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-108",
+    "question": "Localization: продукт має різні валюти та часові зони. Які ризики Senior QA має покрити?",
+    "answers": [
+      "Тільки переклад currency label",
+      "Currency conversion, rounding, timezone boundaries, daylight saving, date filters, reports, receipts і consistency між UI/API/export",
+      "Тільки символ валюти",
+      "Тільки англійську локаль"
+    ],
+    "correctIndex": 1,
+    "explanation": "Валюти й часові зони ламають фінансові дані, звіти й фільтри. Senior QA має перевіряти консистентність між UI, API та export.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-109",
+    "question": "Accessibility: як Senior QA має включити WCAG thinking у процес без окремої accessibility команди?",
+    "answers": [
+      "Перевіряти accessibility тільки після скарг",
+      "Додати базові критерії в DoD, review дизайну, keyboard checks, contrast, labels, modal/focus rules і навчити команду типових дефектів",
+      "Ігнорувати, якщо продукт B2B",
+      "Перевіряти тільки головну сторінку раз на рік"
+    ],
+    "correctIndex": 1,
+    "explanation": "Senior QA має вбудовувати accessibility раніше в процес: дизайн, DoD, компоненти, manual checks і знання команди.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-110",
+    "question": "Test data: у staging дані часто не відповідають production-like сценаріям. Що Senior QA має запропонувати?",
+    "answers": [
+      "Тестувати як є",
+      "Test data strategy: seeded datasets, roles/states matrix, anonymized production-like data, refresh cadence, ownership і cleanup rules",
+      "Використовувати production акаунти реальних клієнтів",
+      "Видалити data-heavy тести"
+    ],
+    "correctIndex": 1,
+    "explanation": "Погані тестові дані знижують якість тестування. Senior QA має запропонувати керований підхід до станів, оновлення, ownership і privacy.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-111",
+    "question": "Communication: Dev Lead хоче закрити critical bug як known issue. Що робить Senior QA?",
+    "answers": [
+      "Мовчки погоджується",
+      "Дає impact, affected users, workaround, severity/priority аргументи, release risk, mitigation options і просить явного business acceptance",
+      "Свариться в чаті",
+      "Видаляє баг із релізного списку"
+    ],
+    "correctIndex": 1,
+    "explanation": "Senior QA не блокує емоційно, а робить ризик видимим. Known issue можливий лише з прозорим impact, workaround і прийняттям ризику.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-112",
+    "question": "Privacy: що Senior QA має перевірити при інтеграції з analytics provider?",
+    "answers": [
+      "Тільки що event відправляється",
+      "Consent state, PII leakage, user id policy, event properties, opt-out, regional behavior, debug logs і data retention expectations",
+      "Тільки назву event",
+      "Нічого, analytics не QA зона"
+    ],
+    "correctIndex": 1,
+    "explanation": "Аналітика може витікати персональні дані. Senior QA має перевіряти consent, properties, opt-out, регіональні правила й debug logs.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-113",
+    "question": "Bad situation: production bug не був покритий тестами. Що має зробити Senior QA після fix?",
+    "answers": [
+      "Додати один тест і забути",
+      "Провести RCA: чому пропустили, який test basis/coverage gap, які схожі зони ризику, які testware/process changes потрібні",
+      "Знайти винного QA",
+      "Сказати, що повне тестування неможливе і нічого не міняти"
+    ],
+    "correctIndex": 1,
+    "explanation": "Production bug - це сигнал про gap у процесі або покритті. Senior QA має закрити не лише конкретний дефект, а й клас ризику.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "lead-2026-104",
+    "question": "Requirements: як QA Lead має покращити якість вимог у командах?",
+    "answers": [
+      "Просити QA тестувати уважніше після розробки",
+      "Ввести DoR, QA участь у refinement, приклади testable AC, risk questions checklist, review складних фіч і feedback loop по requirement defects",
+      "Заборонити зміни вимог",
+      "Передати все BA без QA участі"
+    ],
+    "correctIndex": 1,
+    "explanation": "Якість вимог покращується процесно: DoR, refinement, testability, risk questions і аналіз дефектів, що прийшли з нечітких вимог.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-105",
+    "question": "E-commerce: які quality metrics QA Lead має дивитись після checkout release?",
+    "answers": [
+      "Тільки кількість виконаних тест-кейсів",
+      "Conversion, payment failure rate, cart abandonment, error rate, refund issues, support tickets, revenue anomalies і escaped checkout defects",
+      "Тільки velocity команди",
+      "Тільки кількість знайдених typo"
+    ],
+    "correctIndex": 1,
+    "explanation": "Для e-commerce якість напряму видно в бізнес-метриках. Lead QA має поєднувати тестові результати з production і customer impact.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-106",
+    "question": "Fintech: що QA Lead має стандартизувати для тестування платежів?",
+    "answers": [
+      "Тільки UI happy path",
+      "Risk matrix: суми, валюти, ліміти, KYC, fees, idempotency, reconciliation, audit, rollback, monitoring і incident escalation",
+      "Тільки один тестовий card number",
+      "Тільки перевірку success message"
+    ],
+    "correctIndex": 1,
+    "explanation": "Платежі потребують стандарту через високий бізнес і compliance ризик. Lead QA має керувати сценаріями, даними, evidence і escalation.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-107",
+    "question": "SaaS/Admin: що QA Lead має включити в стандарт тестування ролей і доступів?",
+    "answers": [
+      "Тільки перевірку видимості кнопок",
+      "Role matrix, UI/API permissions, direct URL access, old sessions, audit logs, tenant isolation, negative checks і review ownership",
+      "Тільки назви ролей",
+      "Тільки admin happy path"
+    ],
+    "correctIndex": 1,
+    "explanation": "Access control не можна тестувати тільки через UI. Lead QA має вимагати матрицю ролей, negative checks, API/direct access і audit.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-108",
+    "question": "Localization: як QA Lead має організувати localization QA для багатомовного продукту?",
+    "answers": [
+      "Перевіряти тільки переклад головної сторінки",
+      "Language matrix, priority locales, pseudo-localization, RTL rules, date/number/currency formats, truncation checks, fallback і ownership перекладів",
+      "Тестувати всі мови однаково глибоко без ризиків",
+      "Покладатись тільки на перекладачів"
+    ],
+    "correctIndex": 1,
+    "explanation": "Localization QA має бути risk-based. Lead QA визначає пріоритети локалей, формати, RTL, fallback, truncation і хто відповідає за якість перекладів.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-109",
+    "question": "Accessibility: як QA Lead має впровадити accessibility baseline?",
+    "answers": [
+      "Перевіряти accessibility тільки перед великим релізом",
+      "Визначити мінімальні критерії, додати їх у DoD/design review, навчити QA, мати checklist для keyboard/focus/contrast/labels і tracking accessibility debt",
+      "Ігнорувати, якщо немає legal вимоги",
+      "Перевіряти тільки кольори"
+    ],
+    "correctIndex": 1,
+    "explanation": "Accessibility baseline має бути частиною процесу, а не разовою перевіркою. Lead QA задає стандарти, навчання, checklist і debt tracking.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-110",
+    "question": "Test data: як QA Lead має вирішити проблему нестабільних тестових даних у кількох командах?",
+    "answers": [
+      "Дозволити кожній команді робити як зручно",
+      "Визначити ownership, test data catalog, refresh rules, role/state matrix, anonymization, cleanup, access policy і process для запитів нових даних",
+      "Використовувати production дані без маскування",
+      "Заборонити перевірки, які потребують даних"
+    ],
+    "correctIndex": 1,
+    "explanation": "Test data management - системна проблема. Lead QA має створити правила ownership, доступів, refresh, privacy і каталог потрібних станів.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-111",
+    "question": "Communication: як QA Lead має працювати з бізнесом, який постійно тисне на релізи?",
+    "answers": [
+      "Завжди казати “ні”",
+      "Говорити мовою ризику: impact, probability, mitigation, known risks, rollback, monitoring, cost of delay і явно фіксувати risk acceptance",
+      "Мовчки погоджуватись",
+      "Передати рішення junior QA"
+    ],
+    "correctIndex": 1,
+    "explanation": "Lead QA має бути партнером бізнесу: не просто блокувати, а показувати ризики, варіанти зниження й умови прийняття рішення.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-112",
+    "question": "Privacy: що QA Lead має впровадити для продукту з PII?",
+    "answers": [
+      "Перевіряти PII тільки коли знайдеться баг",
+      "PII checklist, masking rules, log/analytics/crash report checks, access control review, test data anonymization і escalation для privacy defects",
+      "Дозволити PII в тестових логах",
+      "Ігнорувати privacy у staging"
+    ],
+    "correctIndex": 1,
+    "explanation": "Privacy має бути частиною QA process. Lead QA визначає, де PII може витікати, як тестувати й коли ескалювати privacy defects.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-113",
+    "question": "Bad situation: після кількох production incidents керівництво питає “що QA робить не так?”. Що відповідає Lead QA?",
+    "answers": [
+      "“Винні окремі QA”",
+      "Показує системний аналіз: incident patterns, requirement gaps, test coverage gaps, environment issues, release pressure, monitoring gaps і improvement roadmap з owners",
+      "Приховує частину інцидентів",
+      "Каже, що QA не має стосунку до production"
+    ],
+    "correctIndex": 1,
+    "explanation": "Lead QA має відповідати системно, а не персонально звинувачувати. Production incidents потребують patterns, root causes і roadmap покращень.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "junior-2026-114",
+    "question": "Interview case: тобі дали user story “як користувач, я хочу швидко оплатити замовлення”. Що найкраще зробити першим?",
+    "answers": [
+      "Одразу писати тест-кейси на всі кнопки checkout",
+      "Уточнити, що означає “швидко оплатити”: методи оплати, success/failure flow, обмеження, acceptance criteria і очікуваний результат",
+      "Тестувати тільки кнопку Pay",
+      "Чекати готовий білд без питань"
+    ],
+    "correctIndex": 1,
+    "explanation": "Сильний Manual QA починає не з кліків, а з тестованості вимоги. Якщо “швидко оплатити” не розкладено на правила й очікування, тестування буде здогадками.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-115",
+    "question": "Bug report review: у багу написано “не працює пошук”. Чого найбільше не вистачає?",
+    "answers": [
+      "Більш емоційного опису",
+      "Кроків, search query, actual/expected result, environment, прикладу даних, screenshot/video і частоти відтворення",
+      "Імені розробника в title",
+      "Більшого priority без аналізу"
+    ],
+    "correctIndex": 1,
+    "explanation": "Фраза “не працює” не actionable. Розробнику потрібні умови, дані, кроки й очікуваний результат, щоб швидко відтворити й виправити дефект.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-116",
+    "question": "Interview answer: кандидат каже “я тестую форму, вводжу правильні дані й натискаю Submit”. Що в цій відповіді слабке?",
+    "answers": [
+      "Вона занадто технічна",
+      "Є тільки happy path: немає негативних, boundary, validation, accessibility, network і data persistence перевірок",
+      "Кандидат згадав кнопку Submit",
+      "Відповідь занадто довга"
+    ],
+    "correctIndex": 1,
+    "explanation": "На співбесіді важливо показати ширину мислення. Для форми QA має думати про валідацію, межі, помилки, стани, дані й користувацький досвід.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-117",
+    "question": "Case: після реєстрації користувач не отримав email. Яка перша корисна перевірка?",
+    "answers": [
+      "Одразу сказати, що email service зламаний",
+      "Перевірити правильність email, spam, resend, Network/API response, email template/queue status якщо доступно і чи створився користувач",
+      "Створити нового користувача з тим самим email без аналізу",
+      "Закрити задачу як failed без evidence"
+    ],
+    "correctIndex": 1,
+    "explanation": "Email flow має кілька точок збою: frontend, API, черга, шаблон, доставка, spam. QA має звузити проблему й зібрати докази.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-118",
+    "question": "Anti-pattern: QA пройшов тест, але не записав, які дані використовував. Чому це проблема?",
+    "answers": [
+      "Бо тестування завжди має бути довгим",
+      "Без test data важко повторити результат, розібрати дефект, перевірити fix або зрозуміти, чи сценарій був валідний",
+      "Бо QA має писати тільки SQL",
+      "Це не проблема, якщо тест пройшов"
+    ],
+    "correctIndex": 1,
+    "explanation": "Test data - частина evidence. Якщо дані невідомі, результат слабко відтворюваний і команда не може довіряти висновку.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-119",
+    "question": "Case: у mobile app при повороті екрана форма очищається. Як це оцінити?",
+    "answers": [
+      "Це завжди нормально",
+      "Перевірити expected behavior, чи втрачаються введені дані, чи є warning/autosave, які поля очищаються і чи відтворюється на різних OS/devices",
+      "Перевірити тільки портретний режим",
+      "Ігнорувати, якщо користувач рідко повертає екран"
+    ],
+    "correctIndex": 1,
+    "explanation": "Втрата введених даних - UX і data loss ризик. QA має уточнити очікування й перевірити стабільність на пристроях та ОС.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-120",
+    "question": "Case: у таблиці після фільтра “Active” видно inactive користувача. Які докази потрібні?",
+    "answers": [
+      "Тільки скріншот рядка",
+      "Фільтр, URL/query params, test data/user id, expected статус у БД/API якщо доступно, screenshot і кроки відтворення",
+      "Тільки назва таблиці",
+      "Тільки відео без expected result"
+    ],
+    "correctIndex": 1,
+    "explanation": "Для data/filter bug важливо довести, що дані справді не відповідають фільтру. Допомагають test data, API/DB evidence і точні умови.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-121",
+    "question": "Interview case: як тестувати кнопку “Delete account” на Junior рівні?",
+    "answers": [
+      "Натиснути Delete і подивитись, що сталося",
+      "Перевірити confirmation, cancel, password/2FA якщо є, final state, login після видалення, data visibility, email notification і чи не можна видалити чужий акаунт",
+      "Перевірити тільки текст кнопки",
+      "Не тестувати, бо це небезпечна дія"
+    ],
+    "correctIndex": 1,
+    "explanation": "Destructive actions потребують обережності: confirmation, права доступу, наслідки, відновлення/неможливість входу й захист від випадкових дій.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-122",
+    "question": "Anti-pattern: QA каже “баг не відтворився, закриваю”. Що правильніше?",
+    "answers": [
+      "Завжди закривати одразу",
+      "Написати, на якому build/environment/data перевіряв, скільки спроб, що саме не відтворилось, і за потреби попросити додаткові умови/evidence",
+      "Видалити баг",
+      "Поставити Critical"
+    ],
+    "correctIndex": 1,
+    "explanation": "Cannot reproduce теж має бути доказовим. Команда повинна розуміти, в яких умовах QA перевіряв і що ще потрібно для аналізу.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "junior-2026-123",
+    "question": "Case: після зміни мови частина сторінки лишилась англійською. Як оформити дефект?",
+    "answers": [
+      "“Переклад поганий”",
+      "Вказати locale, сторінку/компонент, тексти без перекладу, expected language, screenshot, browser/device і чи проблема після refresh/relogin",
+      "Тільки скріншот без locale",
+      "Не заводити, бо це не функціональний баг"
+    ],
+    "correctIndex": 1,
+    "explanation": "Localization defect має бути конкретним: яка локаль, де саме, які рядки, за яких умов. Це допомагає швидко знайти ключ перекладу або fallback issue.",
+    "levels": [
+      "junior"
+    ]
+  },
+  {
+    "id": "middle-2026-114",
+    "question": "Open case: як Middle QA має тестувати checkout з promo code і доставкою?",
+    "answers": [
+      "Тільки один happy path з валідним купоном",
+      "Покрити cart totals, promo rules, shipping methods, tax, currency, stock, guest/login, invalid/expired coupons, payment errors і order confirmation",
+      "Тільки дизайн checkout",
+      "Тільки API status 200"
+    ],
+    "correctIndex": 1,
+    "explanation": "Checkout - інтеграційний бізнес-flow. Middle QA має мислити сумами, правилами, станами користувача, помилками оплати й підтвердженням замовлення.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-115",
+    "question": "Bug report review: у багу є steps, але немає expected result. Чим це погано?",
+    "answers": [
+      "Нічим, steps достатньо",
+      "Без expected result незрозуміло, що саме вважається дефектом і з чим порівнювати actual behavior",
+      "Баг автоматично стає Low priority",
+      "Expected result потрібен тільки Junior QA"
+    ],
+    "correctIndex": 1,
+    "explanation": "Expected result - це критерій дефекту. Без нього dev/PM можуть по-різному трактувати поведінку, особливо коли вимоги нечіткі.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-116",
+    "question": "Interview answer: кандидат каже “якщо часу мало, я перевіряю що встигну”. Що слабке?",
+    "answers": [
+      "Він не назвав конкретний браузер",
+      "Немає risk-based підходу: affected areas, critical paths, business impact, defects history, smoke і explicit known risks",
+      "Він не сказав слово regression",
+      "Відповідь занадто чесна"
+    ],
+    "correctIndex": 1,
+    "explanation": "Middle QA має не просто “що встигну”, а свідомо скоротити scope за ризиками й пояснити, що залишилось непокритим.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-117",
+    "question": "Case: dev змінив validation email. Що має перевірити Middle QA?",
+    "answers": [
+      "Тільки валідний email",
+      "Valid/invalid formats, uppercase, spaces, plus alias, unicode/domain cases, duplicate email, API validation, error messages і existing users",
+      "Тільки placeholder",
+      "Тільки UI color після помилки"
+    ],
+    "correctIndex": 1,
+    "explanation": "Email validation має багато edge cases і часто відрізняється між frontend/backend. Middle QA має перевірити UI, API, дублікати й повідомлення.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-118",
+    "question": "Case: production support повідомив, що користувачі не можуть завантажити invoice. Що робить Middle QA?",
+    "answers": [
+      "Чекає Jira ticket",
+      "Збирає affected users/roles, browser/device, invoice id, error, Network response, permissions, file generation status і пробує відтворити на staging/production-safe способом",
+      "Створює баг без перевірки",
+      "Перевіряє тільки кнопку Download"
+    ],
+    "correctIndex": 1,
+    "explanation": "Production issue потребує швидкого triage: хто зачеплений, які умови, чи проблема в permissions, генерації файлу, мережі або конкретних даних.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-119",
+    "question": "Case: after deploy частина API повертає 403 замість 401. Чому це важливо?",
+    "answers": [
+      "Неважливо, обидва статуси помилки",
+      "401 означає unauthenticated, 403 authenticated but forbidden; неправильний статус може зламати UI flow, retry/login behavior і security semantics",
+      "403 завжди краще",
+      "Це тільки backend concern"
+    ],
+    "correctIndex": 1,
+    "explanation": "Manual QA має розуміти різницю 401/403. Від статусу залежить поведінка клієнта: login redirect, повідомлення, refresh token і доступи.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-120",
+    "question": "Case: у product card ціна правильна, але в cart інша. Як локалізувати?",
+    "answers": [
+      "Створити баг “ціна неправильна” без деталей",
+      "Порівняти product API/cart API, currency, discounts, quantity, taxes, cache, selected variant і timing оновлення ціни",
+      "Перевірити тільки UI product card",
+      "Змінити товар і забути"
+    ],
+    "correctIndex": 1,
+    "explanation": "Різна ціна може йти з різних джерел або правил. Middle QA має звузити: API, кеш, варіант, знижки, податки, кількість.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-121",
+    "question": "Anti-pattern: QA пише всі баги як High severity. Який ризик?",
+    "answers": [
+      "Команда швидше все виправить",
+      "Severity втрачає сенс, команда перестає довіряти triage, справді критичні дефекти губляться в шумі",
+      "Це завжди правильний підхід перед релізом",
+      "Priority більше не потрібен"
+    ],
+    "correctIndex": 1,
+    "explanation": "Severity/Priority мають допомагати приймати рішення. Якщо все High, команда втрачає сигнал і не бачить реальних blockers.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-122",
+    "question": "Case: QA має протестувати фічу, але API documentation застаріла. Що робити?",
+    "answers": [
+      "Ігнорувати API і тестувати тільки UI",
+      "Порівняти фактичні responses, уточнити contract у backend/BA, зафіксувати docs gap і тестувати за погодженим expected behavior",
+      "Створити всі дефекти як blocker без аналізу",
+      "Використовувати стару документацію як істину"
+    ],
+    "correctIndex": 1,
+    "explanation": "Застаріла документація - test basis gap. Middle QA має знайти актуальне джерело правди й допомогти оновити docs, а не тестувати навмання.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "middle-2026-123",
+    "question": "Case: як перевірити, що notification settings працюють правильно?",
+    "answers": [
+      "Тільки включити один toggle",
+      "Перевірити on/off для каналів, email/push delivery, unsubscribe, user roles, quiet hours, saved settings, default values і behavior після relogin",
+      "Тільки текст toggle",
+      "Тільки UI без фактичної доставки"
+    ],
+    "correctIndex": 1,
+    "explanation": "Notification settings - це не лише toggles. Треба перевірити збереження, фактичну доставку, канали, дефолти й user preferences.",
+    "levels": [
+      "middle"
+    ]
+  },
+  {
+    "id": "senior-2026-114",
+    "question": "Open case: як Senior QA має тестувати withdrawal flow у fintech продукті?",
+    "answers": [
+      "Один успішний withdrawal",
+      "Limits, KYC, balance, fees, currency, pending/approved/rejected states, duplicate submit, timeout, reconciliation, audit, notifications і rollback/support flow",
+      "Тільки кнопку Withdraw",
+      "Тільки UI success screen"
+    ],
+    "correctIndex": 1,
+    "explanation": "Withdrawal - high-risk flow. Senior QA має покрити фінансову консистентність, стани, помилки, дублікати, audit і support/reconciliation сценарії.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-115",
+    "question": "Bug report review: production bug описаний без impact. Чому це критично?",
+    "answers": [
+      "Impact не потрібен, якщо є screenshot",
+      "Без impact команда не може правильно визначити severity, priority, rollback/hotfix потребу і комунікацію зі stakeholders",
+      "Impact потрібен тільки PM",
+      "Баг автоматично Low"
+    ],
+    "correctIndex": 1,
+    "explanation": "Для production дефектів impact - ключ до рішення. Він показує, кого зачепило, наскільки серйозно і чи потрібні hotfix, rollback або workaround.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-116",
+    "question": "Interview answer: кандидат каже “я завжди тестую все”. Що в цій відповіді слабке для Senior QA?",
+    "answers": [
+      "Нічого, це ідеальна відповідь",
+      "Senior має говорити про risk-based scope, trade-offs, constraints, prioritization, known risks і release confidence, бо exhaustive testing неможливе",
+      "Він не назвав Postman",
+      "Він не сказав слово checklist"
+    ],
+    "correctIndex": 1,
+    "explanation": "Senior QA має мислити обмеженнями й ризиками. “Тестую все” звучить красиво, але не є реалістичною стратегією.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-117",
+    "question": "Case: нова фіча змінює permission model для всього SaaS продукту. Що робить Senior QA?",
+    "answers": [
+      "Перевіряє тільки новий екран roles",
+      "Будує role/permission matrix, перевіряє UI/API/direct URL, старі сесії, audit logs, tenant isolation, migration existing users і negative access",
+      "Тестує тільки admin user",
+      "Чекає production feedback"
+    ],
+    "correctIndex": 1,
+    "explanation": "Permission model - системний ризик. Senior QA має покрити матрицю доступів, старі дані, API, direct access, tenant isolation і audit.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-118",
+    "question": "Case: команда хоче релізити з known issue у payment history. Як Senior QA має оцінити?",
+    "answers": [
+      "Заборонити реліз без пояснення",
+      "Оцінити affected users, financial/legal impact, workaround, support load, monitoring, rollback/hotfix plan і чи бізнес явно приймає ризик",
+      "Погодитись, якщо PM просить",
+      "Приховати issue з release notes"
+    ],
+    "correctIndex": 1,
+    "explanation": "Known issue у фінансовій історії може мати високий impact. Senior QA має дати risk assessment і mitigation, а не просто yes/no.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-119",
+    "question": "Case: після міграції users частина notification preferences скинулась. Що перевірити?",
+    "answers": [
+      "Тільки що user може login",
+      "Pre/post migration mapping, default rules, opt-in/opt-out consent, affected users, audit/export evidence, rollback/fix script і communication impact",
+      "Тільки UI settings page",
+      "Ігнорувати, бо це дрібна настройка"
+    ],
+    "correctIndex": 1,
+    "explanation": "Preferences можуть мати privacy/legal impact. Senior QA має перевірити mapping, consent, affected segment і спосіб відновлення.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-120",
+    "question": "Case: як Senior QA має тестувати booking cancellation rules?",
+    "answers": [
+      "Один cancel booking",
+      "Time windows, timezone, refund rules, cancellation fee, booking states, payment status, notifications, calendar availability і edge cases біля cutoff time",
+      "Тільки кнопку Cancel",
+      "Тільки email після cancel"
+    ],
+    "correctIndex": 1,
+    "explanation": "Cancellation rules часто залежать від часу, timezone, станів і грошей. Senior QA має поєднати state transition, boundary і business rule testing.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-121",
+    "question": "Anti-pattern: Senior QA дає релізний статус “green”, але не згадує неперевірені зони. Чому це небезпечно?",
+    "answers": [
+      "Бо статус має бути довшим",
+      "Stakeholders отримують хибну впевненість і не приймають свідомо ризики по непокритому scope",
+      "Бо green завжди означає відсутність багів",
+      "Бо QA має писати тільки failed статуси"
+    ],
+    "correctIndex": 1,
+    "explanation": "Release confidence має включати gaps. Якщо QA не називає неперевірені зони, бізнес приймає рішення без повної картини ризику.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-122",
+    "question": "Case: Support показує 20 скарг, але QA не відтворює дефект. Що робить Senior QA?",
+    "answers": [
+      "Закриває як Cannot reproduce",
+      "Аналізує сегменти, акаунти, версії, логи, час, feature flags, data states, support evidence і шукає pattern замість одиничного repro",
+      "Ігнорує, бо QA не бачить баг",
+      "Перестворює всі акаунти"
+    ],
+    "correctIndex": 1,
+    "explanation": "Баг може залежати від сегмента, даних, версії або часу. Senior QA має шукати pattern у production evidence, а не зупинятись на локальному unreproducible.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "senior-2026-123",
+    "question": "Case: як Senior QA має перевірити feature flag для нового checkout?",
+    "answers": [
+      "Тільки flag ON для одного користувача",
+      "ON/OFF, targeting, roles/countries, old checkout fallback, cache, analytics events, partial rollout, rollback і consistency після relogin/refresh",
+      "Тільки назву flag",
+      "Тільки production після rollout"
+    ],
+    "correctIndex": 1,
+    "explanation": "Feature flag - це релізний механізм із ризиками targeting, кешу, аналітики й rollback. Senior QA має перевірити не лише фічу, а й контроль rollout.",
+    "levels": [
+      "senior"
+    ]
+  },
+  {
+    "id": "lead-2026-114",
+    "question": "Open case: QA Lead будує interview practical task для Manual QA. Яка задача найкраща?",
+    "answers": [
+      "50 теоретичних термінів без контексту",
+      "Сценарій з user story, нечіткими AC, API response, баг-репортом і проханням скласти risk-based test approach",
+      "Питання тільки “що таке bug?”",
+      "Тільки перевірка знання одного tool"
+    ],
+    "correctIndex": 1,
+    "explanation": "Сильний hiring task перевіряє реальне мислення: вимоги, ризики, API/data, баг-репорт і здатність пояснити пріоритети.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-115",
+    "question": "Bug report review: QA команда пише довгі баги, але dev все одно часто просить уточнення. Що робить Lead QA?",
+    "answers": [
+      "Додає ще більше обов’язкових полів",
+      "Аналізує quality of reports: clarity, repro data, expected result, evidence, environment, impact; проводить calibration з Dev і дає приклади good reports",
+      "Забороняє dev ставити питання",
+      "Оцінює QA за кількістю символів у багу"
+    ],
+    "correctIndex": 1,
+    "explanation": "Довгий баг-репорт не завжди якісний. Lead QA має калібрувати reports за корисністю для triage і fix, а не за обсягом тексту.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-116",
+    "question": "Interview answer: Senior кандидат каже “я завжди блокую реліз, якщо є High bug”. Що перевірити follow-up питанням?",
+    "answers": [
+      "Чи знає кандидат Jira shortcut",
+      "Як він оцінює impact, workaround, affected users, risk acceptance, mitigation, rollback і хто приймає фінальне бізнес-рішення",
+      "Чи любить кандидат регресію",
+      "Скільки багів він знайшов за кар’єру"
+    ],
+    "correctIndex": 1,
+    "explanation": "Lead QA на співбесіді має перевіряти зрілість trade-off мислення. High bug не завжди автоматично означає однакове рішення без контексту.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-117",
+    "question": "Case: QA команда виконує регресію 5 днів і все одно пропускає production bugs. Що робить Lead QA?",
+    "answers": [
+      "Наймає більше QA без аналізу",
+      "Аудит suite: ризики, дублікати, застарілі кейси, production bug mapping, test data, environments, ownership і розділення smoke/core/full regression",
+      "Видаляє регресію",
+      "Просить працювати швидше"
+    ],
+    "correctIndex": 1,
+    "explanation": "Довга регресія без сигналу - системна проблема. Lead QA має оптимізувати coverage, дані, актуальність і структуру suite.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-118",
+    "question": "Case: бізнес хоче запустити новий market/country через 2 тижні. Що QA Lead має оцінити?",
+    "answers": [
+      "Тільки переклад головної сторінки",
+      "Localization, currency/tax, legal/privacy, payment methods, timezone, support flows, device/browser mix, content, analytics і release risks",
+      "Тільки один smoke test",
+      "Тільки кількість QA"
+    ],
+    "correctIndex": 1,
+    "explanation": "Новий market - це не лише мова. Lead QA має бачити локальні платежі, податки, privacy, timezones, support і аналітику.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-119",
+    "question": "Case: QA Lead бачить, що Junior-и бояться ставити питання на refinement. Що робити?",
+    "answers": [
+      "Ставити всі питання самому назавжди",
+      "Дати question checklist, проводити pre-refinement підготовку, моделювати good questions, давати підтримку і поступово делегувати ownership",
+      "Критикувати їх публічно",
+      "Не брати Junior-ів на refinement"
+    ],
+    "correctIndex": 1,
+    "explanation": "Lead QA розвиває команду через безпечне середовище, приклади й поступове делегування. Мета - виростити самостійність, а не залежність від Lead.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-120",
+    "question": "Case: Support і QA по-різному класифікують severity customer issues. Що робить Lead QA?",
+    "answers": [
+      "Залишає як є",
+      "Проводить severity calibration з прикладами, impact categories, affected users, financial/security criteria і узгодженим escalation process",
+      "Дозволяє QA завжди вирішувати одноосібно",
+      "Ставить усім customer issues Critical"
+    ],
+    "correctIndex": 1,
+    "explanation": "Severity має бути спільною мовою для QA, Support, Product і Dev. Calibration з прикладами зменшує конфлікти й пришвидшує triage.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-121",
+    "question": "Anti-pattern: Lead QA вимагає 100% pass rate перед кожним релізом. Чим це може бути погано?",
+    "answers": [
+      "Нічим, це завжди ідеально",
+      "Може стимулювати приховування ризиків, формальне закриття тестів і блокування релізу через low-risk issues без контексту",
+      "Бо тести не потрібні",
+      "Бо pass rate не можна рахувати"
+    ],
+    "correctIndex": 1,
+    "explanation": "Метрика без контексту небезпечна. Lead QA має дивитись на ризики, severity, known issues, coverage і business decision, а не лише pass rate.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-122",
+    "question": "Case: після інциденту команда додала багато checklist items, але процес став повільним. Що робить Lead QA?",
+    "answers": [
+      "Залишає все, бо більше пунктів завжди краще",
+      "Переглядає action items за risk reduction, прибирає low-value checks, автоматизує/спрощує де можливо, лишає owner-ів і перевіряє impact",
+      "Видаляє весь checklist",
+      "Додає ще більше пунктів"
+    ],
+    "correctIndex": 1,
+    "explanation": "Post-incident actions мають зменшувати ризик, а не створювати бюрократію. Lead QA має перевіряти value й підтримуваність контролів.",
+    "levels": [
+      "lead"
+    ]
+  },
+  {
+    "id": "lead-2026-123",
+    "question": "Case: як QA Lead має побудувати “ідеального солдата” Manual QA за 6 місяців?",
+    "answers": [
+      "Дати багато теорії і чекати результат",
+      "План розвитку: test design, domain, API/SQL/DevTools, bug reports, risk thinking, release communication, mentoring, practice cases і регулярний feedback",
+      "Змусити виконувати тільки регресію",
+      "Оцінювати тільки кількість знайдених багів"
+    ],
+    "correctIndex": 1,
+    "explanation": "Сильний Manual QA росте через практику, feedback і відповідальність. Потрібен баланс технічної бази, домену, комунікації, ризиків і реальних кейсів.",
+    "levels": [
+      "lead"
+    ]
+  }
 ];
 
 const levelQuestionIndexes = {

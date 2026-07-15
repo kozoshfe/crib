@@ -9062,6 +9062,8 @@ const TEST_KNOWN_SUPABASE_ROW_ID = "qa-test-known-main";
 const TEST_QUESTIONS_KEY = "qaTestQuestionsAllLevels2026";
 const TEST_PROGRESS_KEY = "qaActiveTestProgressHandbookAll2026";
 const TEST_KNOWN_LOCAL_KEY = "qaTestKnownQuestions2026";
+const DEMO_MODE_KEY = "qaShpargalkaDemoMode";
+const isDemoMode = localStorage.getItem(DEMO_MODE_KEY) === "true";
 const levelLabels = {
   junior: "Junior",
   middle: "Middle",
@@ -9162,6 +9164,8 @@ let knownQuestionStatus = loadKnownQuestionStatus();
 let knownQuestionFilter = "";
 let knownSyncTimer = null;
 
+document.body.classList.toggle("demo-mode", isDemoMode);
+
 const levelTabs = document.querySelectorAll(".level-tab");
 const shuffleBtn = document.getElementById("shuffleBtn");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -9251,8 +9255,47 @@ function loadSupabaseSession() {
     return null;
   }
 }
-async function supabaseJson(path, options = {}) {
+function saveSupabaseSession(session) {
+  if (session?.access_token) localStorage.setItem(SUPABASE_SESSION_KEY, JSON.stringify(session));
+}
+function clearSupabaseSession() {
+  localStorage.removeItem(SUPABASE_SESSION_KEY);
+}
+function shouldRefreshSession(session) {
+  if (!session?.refresh_token) return false;
+  const expiresAt = Number(session.expires_at || 0);
+  if (!expiresAt) return false;
+  return Date.now() >= (expiresAt * 1000) - 60000;
+}
+async function refreshSupabaseSession(session = loadSupabaseSession()) {
+  if (!session?.refresh_token) return null;
+
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ refresh_token: session.refresh_token })
+  });
+
+  if (!response.ok) {
+    clearSupabaseSession();
+    return null;
+  }
+
+  const refreshedSession = await response.json();
+  saveSupabaseSession(refreshedSession);
+  return refreshedSession;
+}
+async function getValidSupabaseSession() {
   const session = loadSupabaseSession();
+  if (!shouldRefreshSession(session)) return session;
+  return await refreshSupabaseSession(session);
+}
+async function supabaseJson(path, options = {}, retried = false) {
+  const session = await getValidSupabaseSession();
   const headers = {
     "apikey": SUPABASE_ANON_KEY,
     "Authorization": `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
@@ -9268,6 +9311,10 @@ async function supabaseJson(path, options = {}) {
   });
 
   if (!response.ok) {
+    if (response.status === 401 && !retried) {
+      const refreshedSession = await refreshSupabaseSession();
+      if (refreshedSession?.access_token) return supabaseJson(path, options, true);
+    }
     const details = await response.json().catch(() => ({}));
     throw new Error(details.message || `Supabase request failed (${response.status})`);
   }
@@ -9838,8 +9885,9 @@ knownQuestionsList.addEventListener("change", event => {
   if (!checkbox) return;
   setKnownQuestion(checkbox.dataset.questionId, checkbox.checked);
 });
-logoutBtn.addEventListener("click", () => {
+logoutBtn?.addEventListener("click", () => {
   localStorage.removeItem("qaShpargalkaSupabaseSession");
+  localStorage.removeItem(DEMO_MODE_KEY);
   clearTestProgress();
   window.location.href = "index.html";
 });

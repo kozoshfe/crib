@@ -4,52 +4,65 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Окремі запитання</title>
-  <link rel="stylesheet" href="questions.css?v=12" />
+  <link rel="stylesheet" href="questions.css?v=18" />
 </head>
 <body>
   <div id="authScreen" class="auth-screen hidden">
     <div class="auth-card">
-      <h2>Вхід</h2>
-      <p class="muted">Ця сторінка має окрему базу запитань і не змінює QA Handbook.</p>
-      <label>Email</label>
-      <input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email" />
-      <label>Пароль</label>
-      <input id="loginPassword" type="password" placeholder="Введи пароль" autocomplete="current-password" />
-      <button id="loginBtn" class="primary" type="button">Увійти</button>
-      <div id="loginMsg" class="muted"></div>
+      <div class="auth-header">
+        <div class="auth-brand">QA Interview Platform</div>
+      </div>
+      <div class="auth-body">
+        <label>Email</label>
+        <input id="loginEmail" type="email" placeholder="you@example.com" autocomplete="email" />
+        <label>Пароль</label>
+        <input id="loginPassword" type="password" placeholder="Введи пароль" autocomplete="current-password" />
+        <button id="loginBtn" class="primary" type="button">Увійти</button>
+        <button id="loginDemoBtn" class="demo-action" type="button">Демо</button>
+        <div id="loginMsg" class="muted"></div>
+      </div>
     </div>
   </div>
 
+  <div class="book-toolbar">
+    <div id="syncStatus" class="sync-status hidden" aria-live="polite">Supabase: очікує вхід</div>
+    <a class="toolbar-brand" href="index.html" aria-label="Перейти на сторінку Відповіді">QA Interview Platform</a>
+    <nav class="app-nav" aria-label="Основне меню">
+      <a class="toolbar-link" href="index.html">Відповіді</a>
+      <a class="toolbar-link active" href="questions.html" aria-current="page">Запитання</a>
+      <a class="toolbar-link" href="tests.html">Тести</a>
+      <a class="toolbar-link" href="interview.html">Інтерв'ю</a>
+    </nav>
+    <button id="logoutBtn" class="logout" type="button">Вийти</button>
+  </div>
+
   <aside class="sidebar">
-    <div class="brand">Запитання</div>
     <div class="search-wrap">
-      <input id="searchInput" class="search" placeholder="Пошук..." />
+      <span class="search-icon" aria-hidden="true"></span>
+      <input id="searchInput" class="search" placeholder="Пошук по handbook..." />
       <button id="clearSearchBtn" class="clear-search hidden" type="button" aria-label="Очистити пошук" title="Очистити пошук">×</button>
     </div>
     <div class="question-stats" aria-label="Статистика питань">
-      <div><span id="totalQuestionsCount">0</span><small>Всього запитань</small></div>
-      <div><span id="coveredQuestionsCount">0</span><small>Покрито</small></div>
+      <div><span class="stats-icon" aria-hidden="true">▤</span><span id="totalQuestionsCount">0</span><small>Всього запитань</small></div>
     </div>
     <label class="filter-toggle" for="uncoveredOnlyToggle">
-      <span>Лише не покрито</span>
+      <span class="status-icon not-learned-status" aria-hidden="true">×</span>
+      <span>Не покрито</span>
       <input id="uncoveredOnlyToggle" type="checkbox" />
       <span class="toggle-slider" aria-hidden="true"></span>
     </label>
+    <div class="sidebar-section-title">Розділи</div>
     <nav id="categoryList" class="category-list"></nav>
     <div class="actions">
-      <button id="addCategoryBtn" type="button">+ Категорія</button>
-      <button id="addQuestionBtn" type="button">+ Питання</button>
+      <div class="action-group">
+        <div class="action-title">Додати</div>
+        <button id="addCategoryBtn" type="button"><span class="action-icon add-icon" aria-hidden="true">+</span><span>Категорія</span></button>
+        <button id="addQuestionBtn" type="button"><span class="action-icon question-icon" aria-hidden="true">?</span><span>Питання</span></button>
+      </div>
     </div>
   </aside>
 
   <main class="book">
-    <div class="book-toolbar">
-      <div id="syncStatus" class="sync-status hidden" aria-live="polite">Supabase: очікує вхід</div>
-      <a class="toolbar-link" href="tests.html">Тести</a>
-      <a class="toolbar-link" href="index.html">Відповіді</a>
-      <button id="syncBtn" class="sync-supabase" type="button">Зберегти</button>
-      <button id="logoutBtn" class="logout" type="button">Вийти</button>
-    </div>
     <h1 id="categoryTitle"></h1>
     <section id="questionsList" class="questions-list"></section>
   </main>
@@ -73,6 +86,6 @@
 
   <script src="data.js?v=supabase-1"></script>
   <script src="questions-data.js?v=2"></script>
-  <script src="questions.js?v=15"></script>
+  <script src="questions.js?v=18"></script>
 </body>
 </html>

@@ -4,66 +4,78 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QA Handbook</title>
-  <link rel="stylesheet" href="style.css?v=9" />
+  <link rel="stylesheet" href="style.css?v=17" />
 </head>
 <body>
   <div id="authScreen" class="auth-screen hidden">
     <div class="auth-card">
-      <h2>Вхід у QA Handbook</h2>
-      <p class="auth-note">Увійди через Supabase Authentication. Після входу дані підтягнуться автоматично.</p>
-      <label>Email</label>
-      <input id="simpleLogin" type="email" placeholder="you@example.com" autocomplete="email" />
-      <label>Пароль</label>
-      <input id="simplePassword" type="password" placeholder="Введи пароль" autocomplete="current-password" />
-      <button id="simpleLoginBtn" class="primary" type="button">Увійти</button>
-      <div id="simpleLoginMsg" class="auth-note"></div>
+      <div class="auth-header">
+        <div class="auth-brand">QA Interview Platform</div>
+      </div>
+      <div class="auth-body">
+        <label>Email</label>
+        <input id="simpleLogin" type="email" placeholder="you@example.com" autocomplete="email" />
+        <label>Пароль</label>
+        <input id="simplePassword" type="password" placeholder="Введи пароль" autocomplete="current-password" />
+        <button id="simpleLoginBtn" class="primary" type="button">Увійти</button>
+        <button id="simpleDemoBtn" class="demo-action" type="button">Демо</button>
+        <div id="simpleLoginMsg" class="auth-note"></div>
+      </div>
     </div>
   </div>
 
+  <div class="book-toolbar">
+    <div id="syncStatus" class="sync-status hidden" aria-live="polite">Supabase: підключення...</div>
+    <a class="toolbar-brand" href="index.html" aria-label="Перейти на сторінку Відповіді">QA Interview Platform</a>
+    <nav class="app-nav" aria-label="Основне меню">
+      <a class="toolbar-link active" href="index.html" aria-current="page">Відповіді</a>
+      <a class="toolbar-link" href="questions.html">Запитання</a>
+      <a class="toolbar-link" href="tests.html">Тести</a>
+      <a class="toolbar-link" href="interview.html">Інтерв'ю</a>
+    </nav>
+    <button id="logoutBtn" class="logout" type="button">Вийти</button>
+  </div>
+
   <aside class="sidebar">
-    <div class="brand">QA Handbook</div>
     <div class="search-wrap">
-      <input id="search" class="search" placeholder="Пошук..." />
+      <span class="search-icon" aria-hidden="true"></span>
+      <input id="search" class="search" placeholder="Пошук по handbook..." />
       <button id="clearSearchBtn" class="clear-search hidden" type="button" aria-label="Очистити пошук" title="Очистити пошук">×</button>
     </div>
     <div class="question-stats" aria-label="Статистика питань">
-      <div><span id="totalQuestionsCount">0</span><small>Всього запитань</small></div>
+      <div><span class="stats-icon" aria-hidden="true">▤</span><span id="totalQuestionsCount">0</span><small>Всього запитань</small></div>
     </div>
     <div class="status-filters" aria-label="Фільтр за статусом">
       <label class="status-toggle learned-filter" for="showLearnedBtn">
+        <span class="status-icon" aria-hidden="true">✓</span>
         <span>Вивчено</span>
         <input id="showLearnedBtn" type="checkbox" />
         <span class="toggle-slider" aria-hidden="true"></span>
       </label>
       <label class="status-toggle not-learned-filter" for="showNotLearnedBtn">
+        <span class="status-icon" aria-hidden="true">×</span>
         <span>Не вивчено</span>
         <input id="showNotLearnedBtn" type="checkbox" />
         <span class="toggle-slider" aria-hidden="true"></span>
       </label>
     </div>
+    <div class="sidebar-section-title">Розділи</div>
     <nav id="categoryList" class="category-list"></nav>
     <div class="actions">
       <div class="action-group">
         <div class="action-title">Додати</div>
-        <button id="addCategoryBtn">+ Категорія</button>
-        <button id="addQuestionBtn">+ Питання</button>
+        <button id="addCategoryBtn" type="button"><span class="action-icon add-icon" aria-hidden="true">+</span><span>Категорія</span></button>
+        <button id="addQuestionBtn" type="button"><span class="action-icon question-icon" aria-hidden="true">?</span><span>Питання</span></button>
       </div>
       <div class="action-group">
-        <div class="action-title">Конвертувати</div>
-        <button id="printBookBtn">PDF</button>
-        <button id="exportWordBtn">Word</button>
+        <div class="action-title">Експорт</div>
+        <button id="printBookBtn" type="button"><span class="action-icon pdf-icon" aria-hidden="true">PDF</span><span>PDF</span></button>
+        <button id="exportWordBtn" type="button"><span class="action-icon word-icon" aria-hidden="true">W</span><span>Word</span></button>
       </div>
     </div>
   </aside>
 
   <main class="book">
-    <div class="book-toolbar">
-      <div id="syncStatus" class="sync-status hidden" aria-live="polite">Supabase: підключення...</div>
-      <a class="toolbar-link" href="tests.html">Тести</a>
-      <a class="toolbar-link" href="questions.html">Запитання</a>
-      <button id="syncSupabaseBtn" class="sync-supabase">Зберегти</button>
-      <button id="logoutBtn" class="logout" type="button">Вийти</button>
-    </div>
     <h1 id="categoryTitle"></h1>
     <section id="questionsList"></section>
   </main>
@@ -94,6 +106,6 @@
   </div>
 
   <script src="data.js?v=supabase-1"></script>
-  <script src="script.js?v=supabase-14"></script>
+  <script src="script.js?v=supabase-20"></script>
 </body>
 </html>

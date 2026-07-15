@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>QA Interview</title>
+  <link rel="stylesheet" href="interview.css?v=3" />
+</head>
+<body>
+  <main class="interview-page">
+    <div class="book-toolbar">
+      <a class="toolbar-brand" href="index.html" aria-label="Перейти на сторінку Відповіді">QA Interview Platform</a>
+      <nav class="app-nav" aria-label="Основне меню">
+        <a class="toolbar-link" href="index.html">Відповіді</a>
+        <a class="toolbar-link" href="questions.html">Запитання</a>
+        <a class="toolbar-link" href="tests.html">Тести</a>
+        <a class="toolbar-link active" href="interview.html" aria-current="page">Інтерв'ю</a>
+      </nav>
+      <button id="logoutBtn" class="logout" type="button">Вийти</button>
+    </div>
+
+    <section class="interview-shell" aria-live="polite">
+      <article class="question-panel">
+        <div class="interview-topline">
+          <div id="questionCategory">Інтерв'ю</div>
+          <div id="questionCounter">0 / 0</div>
+        </div>
+        <h1 id="questionText">Питань ще немає.</h1>
+        <div id="questionStatus" class="feedback hidden"></div>
+        <div class="interview-actions">
+          <button id="knowBtn" class="primary-action know-action" type="button">Знаю</button>
+          <button id="dontKnowBtn" class="secondary-action dont-know-action" type="button">Не знаю</button>
+        </div>
+        <div id="reviewPanel" class="review-panel hidden">
+          <h2 id="reviewTitle">Що повторити</h2>
+          <div id="reviewList" class="review-list"></div>
+          <button id="exportUnknownBtn" class="primary-action export-action" type="button">Конвертувати запитання</button>
+          <button id="restartInterviewBtn" class="secondary-action restart-action" type="button">Почати заново</button>
+        </div>
+      </article>
+    </section>
+  </main>
+  <script src="data.js?v=supabase-1"></script>
+  <script src="interview.js?v=3"></script>
+</body>
+</html>

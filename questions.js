@@ -99,6 +99,7 @@ let categories = JSON.parse(localStorage.getItem(LOCAL_CATEGORIES_KEY)) || windo
 let questions = JSON.parse(localStorage.getItem(LOCAL_QUESTIONS_KEY)) || window.PREFILLED_STANDALONE_QUESTIONS || [];
 let activeCategoryId = localStorage.getItem(LOCAL_ACTIVE_KEY) || categories[0]?.id || "";
 let showUncoveredOnly = localStorage.getItem(LOCAL_UNCOVERED_FILTER_KEY) === "true";
+let sidebarExpanded = false;
 let editingId = null;
 let currentUser = null;
 let syncTimer = null;
@@ -113,6 +114,8 @@ const SUPABASE_ROW_ID = "qa-questions-main";
 const HANDBOOK_SUPABASE_TABLE = "qa_handbook_state";
 const HANDBOOK_SUPABASE_ROW_ID = "qa-handbook-main";
 const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
+const DEMO_MODE_KEY = "qaShpargalkaDemoMode";
+let isDemoMode = localStorage.getItem(DEMO_MODE_KEY) === "true";
 let handbookCategories = loadSavedHandbookCategories();
 let handbookQuestions = loadSavedHandbookQuestions();
 
@@ -233,6 +236,14 @@ function showApp() {
   document.querySelector(".sidebar")?.classList.remove("hidden");
   document.querySelector(".book")?.classList.remove("hidden");
 }
+function applyDemoModeUI() {
+  document.body.classList.toggle("demo-mode", isDemoMode);
+}
+function isDemoCreateBlocked() {
+  if (!isDemoMode) return false;
+  alert("У демо режимі додавання категорій і питань недоступне.");
+  return true;
+}
 function saveLocal() {
   localStorage.setItem(LOCAL_CATEGORIES_KEY, JSON.stringify(categories));
   localStorage.setItem(LOCAL_QUESTIONS_KEY, JSON.stringify(questions));
@@ -285,11 +296,48 @@ function loadSession() {
 function clearSession() {
   localStorage.removeItem(SUPABASE_SESSION_KEY);
 }
-async function supabaseJson(path, options = {}) {
+function isAuthPath(path) {
+  return String(path).startsWith("/auth/v1/");
+}
+function shouldRefreshSession(session) {
+  if (!session?.refresh_token) return false;
+  const expiresAt = Number(session.expires_at || 0);
+  if (!expiresAt) return false;
+  return Date.now() >= (expiresAt * 1000) - 60000;
+}
+async function refreshSession(session = loadSession()) {
+  if (!session?.refresh_token) return null;
+
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ refresh_token: session.refresh_token })
+  });
+
+  if (!response.ok) {
+    clearSession();
+    return null;
+  }
+
+  const refreshedSession = await response.json();
+  saveSession(refreshedSession);
+  return refreshedSession;
+}
+async function getValidSession(path) {
+  if (isAuthPath(path)) return null;
   const session = loadSession();
+  if (!shouldRefreshSession(session)) return session;
+  return await refreshSession(session);
+}
+async function supabaseJson(path, options = {}, retried = false) {
+  const session = await getValidSession(path);
   const headers = {
     "apikey": SUPABASE_ANON_KEY,
-    "Authorization": `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
+    "Authorization": `Bearer ${isAuthPath(path) ? SUPABASE_ANON_KEY : (session?.access_token || SUPABASE_ANON_KEY)}`,
     ...options.headers
   };
 
@@ -302,6 +350,10 @@ async function supabaseJson(path, options = {}) {
   });
 
   if (!response.ok) {
+    if (response.status === 401 && !retried && !isAuthPath(path)) {
+      const refreshedSession = await refreshSession();
+      if (refreshedSession?.access_token) return supabaseJson(path, options, true);
+    }
     const details = await response.json().catch(() => ({}));
     throw new Error(details.message || `Supabase request failed (${response.status})`);
   }
@@ -335,6 +387,9 @@ async function login() {
   }
 
   try {
+    localStorage.removeItem(DEMO_MODE_KEY);
+    isDemoMode = false;
+    applyDemoModeUI();
     const session = await supabaseJson("/auth/v1/token?grant_type=password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -348,9 +403,22 @@ async function login() {
 }
 async function logout() {
   clearSession();
+  localStorage.removeItem(DEMO_MODE_KEY);
   currentUser = null;
+  isDemoMode = false;
+  applyDemoModeUI();
   showAuthScreen();
   setSyncStatus("Supabase: очікує вхід");
+}
+function enterDemoMode() {
+  clearSession();
+  localStorage.setItem(DEMO_MODE_KEY, "true");
+  currentUser = null;
+  isDemoMode = true;
+  applyDemoModeUI();
+  showApp();
+  setSyncStatus("Демо: локальний режим без синхронізації");
+  updateSaveButtonState();
 }
 async function hydrateFromSupabase() {
   if (!currentUser) return false;
@@ -470,6 +538,20 @@ function getCurrentTitle() {
   const title = query ? "Search results" : categories.find(cat => cat.id === activeCategoryId)?.name || "";
   return showUncoveredOnly && title ? `${title} - не покрито` : title;
 }
+function getCategoryIcon(name) {
+  const value = (name || "").toLowerCase();
+  if (value.includes("api")) return "{}";
+  if (value.includes("git")) return "◎";
+  if (value.includes("chrome") || value.includes("developer")) return "⌘";
+  if (value.includes("ризик")) return "△";
+  if (value.includes("process")) return "◷";
+  if (value.includes("estimation")) return "◴";
+  if (value.includes("документац")) return "▧";
+  if (value.includes("вимог")) return "☑";
+  if (value.includes("тест")) return "⚗";
+  if (value.includes("репорт")) return "↗";
+  return "□";
+}
 function renderCategories() {
   categoryList.innerHTML = "";
   questionCategory.innerHTML = "";
@@ -483,23 +565,27 @@ function renderCategories() {
     }
   }
 
-  categories.forEach(cat => {
+  const renderableCategories = showUncoveredOnly
+    ? categories.filter(cat => questions.some(item => item.categoryId === cat.id && isQuestionUncovered(item)))
+    : categories;
+  let visibleCategories = sidebarExpanded ? renderableCategories : renderableCategories.slice(0, 14);
+  const activeCategory = renderableCategories.find(cat => cat.id === activeCategoryId);
+  if (!sidebarExpanded && activeCategory && !visibleCategories.some(cat => cat.id === activeCategoryId)) {
+    visibleCategories = [...visibleCategories.slice(0, 13), activeCategory];
+  }
+
+  visibleCategories.forEach(cat => {
     const categoryQuestions = questions.filter(item => item.categoryId === cat.id);
     const count = categoryQuestions.length;
     const coveredCount = categoryQuestions.filter(isQuestionCovered).length;
     const uncoveredCount = count - coveredCount;
-
-    const option = document.createElement("option");
-    option.value = cat.id;
-    option.textContent = cat.name;
-    questionCategory.appendChild(option);
 
     if (showUncoveredOnly && uncoveredCount === 0) return;
 
     const button = document.createElement("button");
     button.type = "button";
     button.className = `category-item${cat.id === activeCategoryId ? " active" : ""}`;
-    button.innerHTML = `<span>${escapeHtml(cat.name)}</span><span class="count">${count} / ${coveredCount}</span>`;
+    button.innerHTML = `<span class="category-icon" aria-hidden="true">${escapeHtml(getCategoryIcon(cat.name))}</span><span class="category-name">${escapeHtml(cat.name)}</span><span class="count">${count}</span>`;
     button.onclick = () => {
       activeCategoryId = cat.id;
       localStorage.setItem(LOCAL_ACTIVE_KEY, activeCategoryId);
@@ -515,10 +601,24 @@ function renderCategories() {
     };
     categoryList.appendChild(button);
   });
+  if (renderableCategories.length > 14) {
+    const moreButton = document.createElement("button");
+    moreButton.type = "button";
+    moreButton.className = "show-more-categories";
+    moreButton.innerHTML = `<span>${sidebarExpanded ? "Показати менше" : "Показати більше"}</span><span aria-hidden="true">${sidebarExpanded ? "⌃" : "⌄"}</span>`;
+    moreButton.onclick = () => { sidebarExpanded = !sidebarExpanded; renderCategories(); };
+    categoryList.appendChild(moreButton);
+  }
+  categories.forEach(cat => {
+    const option = document.createElement("option");
+    option.value = cat.id;
+    option.textContent = cat.name;
+    questionCategory.appendChild(option);
+  });
 }
 function renderStats() {
   totalQuestionsCount.textContent = questions.length;
-  coveredQuestionsCount.textContent = questions.filter(isQuestionCovered).length;
+  if (coveredQuestionsCount) coveredQuestionsCount.textContent = questions.filter(isQuestionCovered).length;
 }
 function renderQuestions() {
   const list = getVisibleQuestions();
@@ -605,6 +705,7 @@ function render() {
   renderQuestions();
 }
 function openNewQuestion() {
+  if (isDemoCreateBlocked()) return;
   editingId = null;
   modalTitle.textContent = "Нове питання";
   questionCategory.value = activeCategoryId;
@@ -630,6 +731,7 @@ function saveQuestionFromModal() {
   const categoryId = questionCategory.value;
   const question = questionInput.value.trim();
   const note = noteInput.value.trim();
+  if (!editingId && isDemoCreateBlocked()) return;
   if (!question) {
     questionInput.focus();
     return;
@@ -737,6 +839,7 @@ function deleteCategory(id) {
   save();
 }
 function addCategory() {
+  if (isDemoCreateBlocked()) return;
   const name = prompt("Назва категорії:");
   if (!name || !name.trim()) return;
   const id = makeId("category", name);
@@ -746,8 +849,9 @@ function addCategory() {
 }
 
 document.getElementById("loginBtn").addEventListener("click", login);
-document.getElementById("logoutBtn").addEventListener("click", logout);
-syncBtn.addEventListener("click", syncToSupabase);
+document.getElementById("loginDemoBtn")?.addEventListener("click", enterDemoMode);
+document.getElementById("logoutBtn")?.addEventListener("click", logout);
+syncBtn?.addEventListener("click", syncToSupabase);
 document.getElementById("addCategoryBtn").addEventListener("click", addCategory);
 document.getElementById("addQuestionBtn").addEventListener("click", openNewQuestion);
 document.getElementById("saveQuestionBtn").addEventListener("click", saveQuestionFromModal);
@@ -833,7 +937,13 @@ questionsList.addEventListener("contextmenu", event => {
 });
 
 toggleClearSearch();
+applyDemoModeUI();
 uncoveredOnlyToggle.checked = showUncoveredOnly;
 updateSaveButtonState();
 render();
-handleSession(loadSession());
+if (isDemoMode) {
+  showApp();
+  setSyncStatus("Демо: локальний режим без синхронізації");
+} else {
+  handleSession(loadSession());
+}

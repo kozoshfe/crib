@@ -6,6 +6,7 @@ let questionClickTimer = null;
 let draggedCategoryId = null;
 let categoryDragMoved = false;
 let activeStudyFilter = "";
+let sidebarExpanded = false;
 let currentUser = null;
 let syncTimer = null;
 let isHydratingRemote = false;
@@ -20,7 +21,9 @@ const SUPABASE_ROW_ID = "qa-handbook-main";
 const QUESTIONS_SUPABASE_TABLE = "qa_questions_state";
 const QUESTIONS_SUPABASE_ROW_ID = "qa-questions-main";
 const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
+const DEMO_MODE_KEY = "qaShpargalkaDemoMode";
 const QUESTIONS_LOCAL_KEY = "qaCategorizedQuestionsItems";
+let isDemoMode = localStorage.getItem(DEMO_MODE_KEY) === "true";
 
 const categoryList = document.getElementById("categoryList");
 const questionsList = document.getElementById("questionsList");
@@ -226,30 +229,67 @@ function renderAnswer(answer) {
 function renderAnswerForWord(answer) {
   const wrapper = document.createElement("div");
   wrapper.innerHTML = renderAnswer(answer);
-  wrapper.querySelectorAll("ol").forEach(ol => {
-    const fragment = document.createDocumentFragment();
-    Array.from(ol.children).forEach((li, index) => {
-      const p = document.createElement("p");
-      p.className = "word-list-item";
-      const number = document.createElement("strong");
-      number.textContent = `${index + 1}. `;
-      p.appendChild(number);
-      p.append(...Array.from(li.childNodes));
-      fragment.appendChild(p);
-    });
-    ol.replaceWith(fragment);
+
+  wrapper.querySelectorAll("ol, ul").forEach(list => {
+    const previous = list.previousSibling;
+    if (previous?.nodeType === Node.ELEMENT_NODE && previous.tagName === "BR") {
+      previous.remove();
+    }
+    if (previous?.nodeType === Node.ELEMENT_NODE && previous.tagName === "P") {
+      const lastChild = previous.lastChild;
+      if (lastChild?.nodeType === Node.ELEMENT_NODE && lastChild.tagName === "BR") {
+        lastChild.remove();
+      }
+    }
   });
-  wrapper.querySelectorAll("ul").forEach(ul => {
+
+  function listToWordParagraphs(list, level = 0) {
     const fragment = document.createDocumentFragment();
-    Array.from(ul.children).forEach(li => {
+    const isOrdered = list.tagName === "OL";
+
+    Array.from(list.children).forEach((li, index, items) => {
       const p = document.createElement("p");
-      p.className = "word-list-item";
-      p.append("• ");
-      p.append(...Array.from(li.childNodes));
+      p.className = `word-list-item${index === 0 ? " word-list-first" : ""}${index === items.length - 1 ? " word-list-last" : ""}`;
+      if (level > 0) p.classList.add("word-list-nested");
+
+      if (isOrdered) {
+        const number = document.createElement("strong");
+        number.textContent = `${index + 1}. `;
+        p.appendChild(number);
+      } else {
+        p.append("• ");
+      }
+
+      const nestedLists = [];
+      Array.from(li.childNodes).forEach(child => {
+        if (child.nodeType === Node.ELEMENT_NODE && (child.tagName === "OL" || child.tagName === "UL")) {
+          nestedLists.push(child);
+        } else {
+          p.appendChild(child);
+        }
+      });
+
       fragment.appendChild(p);
+      nestedLists.forEach(nestedList => {
+        fragment.appendChild(listToWordParagraphs(nestedList, level + 1));
+      });
     });
-    ul.replaceWith(fragment);
+
+    return fragment;
+  }
+
+  Array.from(wrapper.querySelectorAll("ol, ul"))
+    .filter(list => !list.parentElement.closest("ol, ul"))
+    .forEach(list => {
+      list.replaceWith(listToWordParagraphs(list));
+    });
+
+  wrapper.querySelectorAll("p").forEach(p => {
+    if (!(p.textContent || "").replace(/\u00a0/g, "").trim() && !p.querySelector("img, table")) {
+      p.remove();
+    }
   });
+
   return wrapper.innerHTML;
 }
 function answerToSearchText(answer) {
@@ -362,17 +402,36 @@ function moveCategory(draggedId, targetId) {
   save();
   render();
 }
+function getCategoryIcon(name) {
+  const value = (name || "").toLowerCase();
+  if (value.includes("api")) return "{}";
+  if (value.includes("git")) return "◎";
+  if (value.includes("chrome") || value.includes("developer")) return "⌘";
+  if (value.includes("ризик")) return "△";
+  if (value.includes("process")) return "◷";
+  if (value.includes("estimation")) return "◴";
+  if (value.includes("документац")) return "▧";
+  if (value.includes("вимог")) return "☑";
+  if (value.includes("тест")) return "⚗";
+  if (value.includes("репорт")) return "↗";
+  return "□";
+}
 
 function renderCategories() {
   categoryList.innerHTML = ""; questionCategory.innerHTML = "";
-  categories.forEach(cat => {
+  let visibleCategories = sidebarExpanded ? categories : categories.slice(0, 14);
+  const activeCategory = categories.find(cat => cat.id === activeCategoryId);
+  if (!sidebarExpanded && activeCategory && !visibleCategories.some(cat => cat.id === activeCategoryId)) {
+    visibleCategories = [...visibleCategories.slice(0, 13), activeCategory];
+  }
+  visibleCategories.forEach(cat => {
     const count = questions.filter(q => q.categoryId === cat.id).length;
     const btn = document.createElement("button");
     btn.className = "category-item" + (cat.id === activeCategoryId ? " active" : "");
     btn.type = "button";
     btn.draggable = true;
     btn.title = "Перетягни, щоб змінити порядок";
-    btn.innerHTML = `<span>${escapeHtml(cat.name)}</span><span class="count">${count}</span>`;
+    btn.innerHTML = `<span class="category-icon" aria-hidden="true">${escapeHtml(getCategoryIcon(cat.name))}</span><span class="category-name">${escapeHtml(cat.name)}</span><span class="count">${count}</span>`;
     btn.onclick = () => { if (categoryDragMoved) return; activeStudyFilter = ""; activeCategoryId = cat.id; saveActiveCategory(); render(); };
     btn.oncontextmenu = (e) => { e.preventDefault(); const action = prompt("Напиши: rename або delete", "rename"); if (action === "rename") renameCategory(cat.id); if (action === "delete") deleteCategory(cat.id); };
     btn.ondragstart = (e) => {
@@ -400,6 +459,16 @@ function renderCategories() {
       setTimeout(() => { categoryDragMoved = false; }, 150);
     };
     categoryList.appendChild(btn);
+  });
+  if (categories.length > 14) {
+    const moreBtn = document.createElement("button");
+    moreBtn.className = "show-more-categories";
+    moreBtn.type = "button";
+    moreBtn.innerHTML = `<span>${sidebarExpanded ? "Показати менше" : "Показати більше"}</span><span aria-hidden="true">${sidebarExpanded ? "⌃" : "⌄"}</span>`;
+    moreBtn.onclick = () => { sidebarExpanded = !sidebarExpanded; renderCategories(); };
+    categoryList.appendChild(moreBtn);
+  }
+  categories.forEach(cat => {
     const opt = document.createElement("option"); opt.value = cat.id; opt.textContent = cat.name; questionCategory.appendChild(opt);
   });
 }
@@ -557,12 +626,30 @@ function downloadFile(filename, content, type) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+const WORD_EXPORT_STYLES = `
+  @page WordSection1{size:595.3pt 841.9pt;margin:0.8cm 0.8cm 0.8cm 0.8cm;}
+  div.WordSection1{page:WordSection1;}
+  body{font-family:Georgia,'Times New Roman',serif;color:#111827;margin:0;}
+  h1{text-align:center;font-size:24pt;font-weight:400;margin:0 0 26pt 0;line-height:30pt;mso-line-height-rule:at-least}
+  .word-qa{width:100%;border-collapse:collapse;margin:0 0 18pt 0;page-break-inside:avoid;mso-table-lspace:0pt;mso-table-rspace:0pt}
+  .word-qa-row{page-break-inside:avoid}
+  .word-qa td{border:none;padding:0;page-break-inside:avoid}
+  .print-question{font-family:Arial,sans-serif;font-size:14pt;font-weight:800;margin:0 0 10pt 0;line-height:18pt;mso-line-height-rule:at-least;page-break-after:avoid}
+  .print-answer{font-size:12pt;line-height:18pt;mso-line-height-rule:at-least;margin-left:24pt;margin-bottom:0;page-break-before:avoid}
+  .print-answer p{margin:0 0 8pt 0;line-height:18pt;mso-line-height-rule:at-least}
+  .print-answer p.word-list-item{margin:0;mso-margin-top-alt:0pt;mso-margin-bottom-alt:0pt;line-height:14.5pt;mso-line-height-rule:at-least;text-indent:0;padding-left:0}
+  .print-answer p.word-list-first{margin-top:0;mso-margin-top-alt:0pt}
+  .print-answer p.word-list-last{margin-bottom:2pt;mso-margin-bottom-alt:2pt}
+  .print-answer p.word-list-nested{margin-left:18pt;mso-margin-left-alt:18pt}
+`;
+
 function exportToWord() {
   const isFilteredExport = Boolean(activeStudyFilter || search.value.trim());
   const title = isFilteredExport ? getCurrentViewTitle() : "QA Handbook";
   const body = isFilteredExport ? buildVisibleCategoriesHtml(true) : buildWordCategoriesHtml();
   const filename = title.replace(/[^\wа-яіїєґ-]+/gi, "-").replace(/^-|-$/g, "") || "QA-Handbook";
-  const content = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>${escapeHtml(title)}</title><style>@page WordSection1{size:595.3pt 841.9pt;margin:0.8cm 0.8cm 0.8cm 0.8cm;}div.WordSection1{page:WordSection1;}body{font-family:Georgia,'Times New Roman',serif;color:#111827;margin:0;}h1{text-align:center;font-size:24pt;font-weight:400;margin-bottom:35px}.word-qa{width:100%;border-collapse:collapse;margin:0 0 24px 0;page-break-inside:avoid;mso-table-lspace:0pt;mso-table-rspace:0pt}.word-qa-row{page-break-inside:avoid}.word-qa td{border:none;padding:0;page-break-inside:avoid}.print-question{font-family:Arial,sans-serif;font-size:14pt;font-weight:800;margin:0 0 10px;page-break-after:avoid}.print-answer{font-size:12pt;line-height:1.5;margin-left:24px;margin-bottom:0;page-break-before:avoid}.print-answer p{margin:0 0 8px}.word-list-item{margin:3px 0 3px 0;text-indent:0;padding-left:0}</style></head><body><div class="WordSection1">${body}</div></body></html>`;
+  const content = `<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>${escapeHtml(title)}</title><style>${WORD_EXPORT_STYLES}</style></head><body><div class="WordSection1">${body}</div></body></html>`;
   downloadFile(`${filename}.doc`, "\ufeff" + content, "application/msword");
 }
 function exportDataJs() {
@@ -607,6 +694,14 @@ function showApp() {
   document.querySelector(".sidebar")?.classList.remove("hidden");
   document.querySelector(".book")?.classList.remove("hidden");
 }
+function applyDemoModeUI() {
+  document.body.classList.toggle("demo-mode", isDemoMode);
+}
+function isDemoCreateBlocked() {
+  if (!isDemoMode) return false;
+  alert("У демо режимі додавання категорій і питань недоступне.");
+  return true;
+}
 function getCloudState() {
   return {
     categories,
@@ -644,11 +739,48 @@ function loadSupabaseSession() {
 function clearSupabaseSession() {
   localStorage.removeItem(SUPABASE_SESSION_KEY);
 }
-async function supabaseJson(path, options = {}) {
+function isAuthPath(path) {
+  return String(path).startsWith("/auth/v1/");
+}
+function shouldRefreshSession(session) {
+  if (!session?.refresh_token) return false;
+  const expiresAt = Number(session.expires_at || 0);
+  if (!expiresAt) return false;
+  return Date.now() >= (expiresAt * 1000) - 60000;
+}
+async function refreshSupabaseSession(session = loadSupabaseSession()) {
+  if (!session?.refresh_token) return null;
+
+  const response = await fetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
+    method: "POST",
+    headers: {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ refresh_token: session.refresh_token })
+  });
+
+  if (!response.ok) {
+    clearSupabaseSession();
+    return null;
+  }
+
+  const refreshedSession = await response.json();
+  saveSupabaseSession(refreshedSession);
+  return refreshedSession;
+}
+async function getValidSupabaseSession(path) {
+  if (isAuthPath(path)) return null;
   const session = loadSupabaseSession();
+  if (!shouldRefreshSession(session)) return session;
+  return await refreshSupabaseSession(session);
+}
+async function supabaseJson(path, options = {}, retried = false) {
+  const session = await getValidSupabaseSession(path);
   const headers = {
     "apikey": SUPABASE_ANON_KEY,
-    "Authorization": `Bearer ${session?.access_token || SUPABASE_ANON_KEY}`,
+    "Authorization": `Bearer ${isAuthPath(path) ? SUPABASE_ANON_KEY : (session?.access_token || SUPABASE_ANON_KEY)}`,
     ...options.headers
   };
 
@@ -661,6 +793,10 @@ async function supabaseJson(path, options = {}) {
   });
 
   if (!response.ok) {
+    if (response.status === 401 && !retried && !isAuthPath(path)) {
+      const refreshedSession = await refreshSupabaseSession();
+      if (refreshedSession?.access_token) return supabaseJson(path, options, true);
+    }
     const details = await response.json().catch(() => ({}));
     throw new Error(details.message || `Supabase request failed (${response.status})`);
   }
@@ -758,6 +894,9 @@ async function authLogin() {
   }
 
   try {
+    localStorage.removeItem(DEMO_MODE_KEY);
+    isDemoMode = false;
+    applyDemoModeUI();
     const session = await supabaseJson("/auth/v1/token?grant_type=password", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -771,11 +910,25 @@ async function authLogin() {
 }
 async function authLogout() {
   clearSupabaseSession();
+  localStorage.removeItem(DEMO_MODE_KEY);
   currentUser = null;
+  isDemoMode = false;
+  applyDemoModeUI();
   showAuthScreen();
+}
+function enterDemoMode() {
+  clearSupabaseSession();
+  localStorage.setItem(DEMO_MODE_KEY, "true");
+  currentUser = null;
+  isDemoMode = true;
+  applyDemoModeUI();
+  showApp();
+  setSyncStatus("Демо: локальний режим без синхронізації");
+  updateSaveButtonState();
 }
 function bindAuthUI() {
   document.getElementById("simpleLoginBtn")?.addEventListener("click", authLogin);
+  document.getElementById("simpleDemoBtn")?.addEventListener("click", enterDemoMode);
   document.getElementById("logoutBtn")?.addEventListener("click", authLogout);
   ["simpleLogin", "simplePassword"].forEach(id => {
     document.getElementById(id)?.addEventListener("keydown", event => {
@@ -879,6 +1032,13 @@ async function handleAuthSession(session) {
 async function initSupabase() {
   setSyncStatus("Supabase: ініціалізація...");
   bindAuthUI();
+  applyDemoModeUI();
+  if (isDemoMode) {
+    showApp();
+    setSyncStatus("Демо: локальний режим без синхронізації");
+    updateSaveButtonState();
+    return;
+  }
   const session = loadSupabaseSession();
   if (!session) {
     setSyncStatus("Supabase: очікує вхід");
@@ -890,13 +1050,13 @@ async function initSupabase() {
 }
 function render() { renderStats(); renderCategories(); renderQuestions(); buildPrintBook(); applyQuestionDeepLink(); }
 
-document.getElementById("addCategoryBtn").onclick = () => { const name = prompt("Назва категорії:"); if (!name || !name.trim()) return; const id = makeId(name); categories.push({ id, name: name.trim() }); activeCategoryId = id; save(); render(); };
-function openNewQuestion() { editingIndex = null; document.getElementById("questionModalTitle").textContent = "Нове питання"; questionCategory.value = activeCategoryId; document.getElementById("questionInput").value = ""; setEditorHtml(""); deleteQuestionBtn.classList.add("hidden"); document.getElementById("questionModal").classList.remove("hidden"); focusEditor(); }
+document.getElementById("addCategoryBtn").onclick = () => { if (isDemoCreateBlocked()) return; const name = prompt("Назва категорії:"); if (!name || !name.trim()) return; const id = makeId(name); categories.push({ id, name: name.trim() }); activeCategoryId = id; save(); render(); };
+function openNewQuestion() { if (isDemoCreateBlocked()) return; editingIndex = null; document.getElementById("questionModalTitle").textContent = "Нове питання"; questionCategory.value = activeCategoryId; document.getElementById("questionInput").value = ""; setEditorHtml(""); deleteQuestionBtn.classList.add("hidden"); document.getElementById("questionModal").classList.remove("hidden"); focusEditor(); }
 function openEditQuestion(index) { editingIndex = index; const q = questions[index]; document.getElementById("questionModalTitle").textContent = "Редагувати питання"; questionCategory.value = q.categoryId; document.getElementById("questionInput").value = q.question; setEditorHtml(q.answer); deleteQuestionBtn.classList.remove("hidden"); document.getElementById("questionModal").classList.remove("hidden"); focusEditor(); }
 document.getElementById("addQuestionBtn").addEventListener("click", openNewQuestion);
 document.getElementById("printBookBtn").addEventListener("click", printFullBook);
 document.getElementById("exportWordBtn").addEventListener("click", exportToWord);
-document.getElementById("syncSupabaseBtn").addEventListener("click", syncDataToSupabase);
+document.getElementById("syncSupabaseBtn")?.addEventListener("click", syncDataToSupabase);
 document.getElementById("closeQuestionModal").addEventListener("click", () => document.getElementById("questionModal").classList.add("hidden"));
 document.querySelectorAll(".editor-toolbar button").forEach(button => {
   button.addEventListener("mousedown", e => e.preventDefault());
@@ -913,7 +1073,7 @@ document.querySelectorAll(".editor-toolbar button").forEach(button => {
     focusEditor();
   });
 });
-document.getElementById("saveQuestionBtn").onclick = () => { const categoryId = questionCategory.value; const question = document.getElementById("questionInput").value.trim(); const answer = getEditorHtml(); if (!question || !answer) { alert("Заповни питання і відповідь"); return; } if (editingIndex !== null) questions[editingIndex] = { ...questions[editingIndex], categoryId, question, answer }; else questions.push({ categoryId, question, answer, studyStatus: "" }); activeCategoryId = categoryId; document.getElementById("questionModal").classList.add("hidden"); save(); render(); };
+document.getElementById("saveQuestionBtn").onclick = () => { if (editingIndex === null && isDemoCreateBlocked()) return; const categoryId = questionCategory.value; const question = document.getElementById("questionInput").value.trim(); const answer = getEditorHtml(); if (!question || !answer) { alert("Заповни питання і відповідь"); return; } if (editingIndex !== null) questions[editingIndex] = { ...questions[editingIndex], categoryId, question, answer }; else questions.push({ categoryId, question, answer, studyStatus: "" }); activeCategoryId = categoryId; document.getElementById("questionModal").classList.add("hidden"); save(); render(); };
 deleteQuestionBtn.onclick = () => { if (editingIndex === null) return; deleteQuestion(editingIndex); document.getElementById("questionModal").classList.add("hidden"); editingIndex = null; };
 function renameCategory(id) { const cat = categories.find(c => c.id === id); const name = prompt("Нова назва:", cat.name); if (!name || !name.trim()) return; cat.name = name.trim(); save(); render(); }
 function deleteCategory(id) { if (questions.some(q => q.categoryId === id)) { alert("Спочатку видали або перенеси питання з цієї категорії."); return; } if (!confirm("Видалити категорію?")) return; categories = categories.filter(c => c.id !== id); activeCategoryId = categories[0]?.id || ""; save(); render(); }
@@ -941,6 +1101,7 @@ function initQuestionDeepLink() {
 }
 initQuestionDeepLink();
 toggleClearSearch();
+applyDemoModeUI();
 updateStudyFilterButtons();
 updateSaveButtonState();
 render();

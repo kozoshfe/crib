@@ -4,20 +4,26 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QA Tests</title>
-  <link rel="stylesheet" href="tests.css?v=13" />
+  <link rel="stylesheet" href="tests.css?v=19" />
 </head>
 <body>
   <main class="test-page">
     <div class="book-toolbar">
+      <a class="toolbar-brand" href="index.html" aria-label="Перейти на сторінку Відповіді">QA Interview Platform</a>
       <div class="toolbar-left">
         <button id="manageBtn" class="secondary-action" type="button">Керувати питаннями</button>
         <button id="shuffleBtn" class="secondary-action" type="button">Перемішати</button>
         <button id="knownQuestionsBtn" class="secondary-action" type="button">Запитання</button>
       </div>
       <div class="toolbar-right">
-        <a class="toolbar-link" href="index.html">Відповіді</a>
-        <button id="logoutBtn" class="logout" type="button">Вийти</button>
+        <nav class="app-nav" aria-label="Основне меню">
+          <a class="toolbar-link" href="index.html">Відповіді</a>
+          <a class="toolbar-link" href="questions.html">Запитання</a>
+          <a class="toolbar-link active" href="tests.html" aria-current="page">Тести</a>
+          <a class="toolbar-link" href="interview.html">Інтерв'ю</a>
+        </nav>
       </div>
+      <button id="logoutBtn" class="logout" type="button">Вийти</button>
     </div>
 
     <section class="test-shell" aria-live="polite">
@@ -114,6 +120,6 @@
   </div>
 
   <script src="tests-all-data.js?v=1"></script>
-  <script src="tests.js?v=18"></script>
+  <script src="tests.js?v=20"></script>
 </body>
 </html>

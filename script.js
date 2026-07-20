@@ -22,8 +22,32 @@ const QUESTIONS_SUPABASE_TABLE = "qa_questions_state";
 const QUESTIONS_SUPABASE_ROW_ID = "qa-questions-main";
 const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
 const DEMO_MODE_KEY = "qaShpargalkaDemoMode";
+const DEMO_STUDY_STATUS_KEY = "qaShpargalkaDemoStudyStatuses";
 const QUESTIONS_LOCAL_KEY = "qaCategorizedQuestionsItems";
 let isDemoMode = localStorage.getItem(DEMO_MODE_KEY) === "true";
+let demoStudyStatuses = loadDemoStudyStatuses();
+
+function loadDemoStudyStatuses() {
+  try {
+    const statuses = JSON.parse(localStorage.getItem(DEMO_STUDY_STATUS_KEY) || "{}");
+    return statuses && typeof statuses === "object" ? statuses : {};
+  } catch (error) {
+    return {};
+  }
+}
+function getStudyStatusKey(question) {
+  return `${question.categoryId}::${question.question}`;
+}
+function getQuestionStudyStatus(question) {
+  return isDemoMode ? (demoStudyStatuses[getStudyStatusKey(question)] || "") : question.studyStatus;
+}
+function applyDemoStudyStatuses() {
+  if (!isDemoMode) return;
+  questions.forEach(question => {
+    question.studyStatus = demoStudyStatuses[getStudyStatusKey(question)] || "";
+  });
+}
+applyDemoStudyStatuses();
 
 const categoryList = document.getElementById("categoryList");
 const questionsList = document.getElementById("questionsList");
@@ -357,7 +381,16 @@ function setQuestionStudyStatus(index, status) {
   const question = questions[index];
   if (!question) return;
 
-  question.studyStatus = question.studyStatus === status ? "" : status;
+  const nextStatus = getQuestionStudyStatus(question) === status ? "" : status;
+  question.studyStatus = nextStatus;
+  if (isDemoMode) {
+    const storageKey = getStudyStatusKey(question);
+    if (nextStatus) demoStudyStatuses[storageKey] = nextStatus;
+    else delete demoStudyStatuses[storageKey];
+    localStorage.setItem(DEMO_STUDY_STATUS_KEY, JSON.stringify(demoStudyStatuses));
+    renderQuestions();
+    return;
+  }
   save();
   renderQuestions();
 }
@@ -375,7 +408,7 @@ function getVisibleQuestions() {
   let list = questions.map((q, index) => ({...q, index}));
 
   if (query) list = list.filter(q => (q.question + " " + answerToSearchText(q.answer)).toLowerCase().includes(query));
-  if (activeStudyFilter) list = list.filter(q => q.studyStatus === activeStudyFilter);
+  if (activeStudyFilter) list = list.filter(q => getQuestionStudyStatus(q) === activeStudyFilter);
   if (!query && !activeStudyFilter) list = list.filter(q => q.categoryId === activeCategoryId);
 
   return list;
@@ -390,6 +423,7 @@ function getCurrentViewTitle() {
   return activeCat ? activeCat.name : "";
 }
 function moveCategory(draggedId, targetId) {
+  if (isDemoMode) return;
   if (!draggedId || draggedId === targetId) return;
 
   const fromIndex = categories.findIndex(cat => cat.id === draggedId);
@@ -429,12 +463,13 @@ function renderCategories() {
     const btn = document.createElement("button");
     btn.className = "category-item" + (cat.id === activeCategoryId ? " active" : "");
     btn.type = "button";
-    btn.draggable = true;
-    btn.title = "Перетягни, щоб змінити порядок";
+    btn.draggable = !isDemoMode;
+    if (!isDemoMode) btn.title = "Перетягни, щоб змінити порядок";
     btn.innerHTML = `<span class="category-icon" aria-hidden="true">${escapeHtml(getCategoryIcon(cat.name))}</span><span class="category-name">${escapeHtml(cat.name)}</span><span class="count">${count}</span>`;
     btn.onclick = () => { if (categoryDragMoved) return; activeStudyFilter = ""; activeCategoryId = cat.id; saveActiveCategory(); render(); };
     btn.oncontextmenu = (e) => { e.preventDefault(); const action = prompt("Напиши: rename або delete", "rename"); if (action === "rename") renameCategory(cat.id); if (action === "delete") deleteCategory(cat.id); };
     btn.ondragstart = (e) => {
+      if (isDemoMode) return;
       draggedCategoryId = cat.id;
       categoryDragMoved = false;
       btn.classList.add("dragging");
@@ -442,6 +477,7 @@ function renderCategories() {
       e.dataTransfer.setData("text/plain", cat.id);
     };
     btn.ondragover = (e) => {
+      if (isDemoMode) return;
       if (!draggedCategoryId || draggedCategoryId === cat.id) return;
       e.preventDefault();
       btn.classList.add("drag-over");
@@ -449,11 +485,13 @@ function renderCategories() {
     };
     btn.ondragleave = () => btn.classList.remove("drag-over");
     btn.ondrop = (e) => {
+      if (isDemoMode) return;
       e.preventDefault();
       btn.classList.remove("drag-over");
       moveCategory(e.dataTransfer.getData("text/plain") || draggedCategoryId, cat.id);
     };
     btn.ondragend = () => {
+      if (isDemoMode) return;
       draggedCategoryId = null;
       document.querySelectorAll(".category-item.dragging, .category-item.drag-over").forEach(item => item.classList.remove("dragging", "drag-over"));
       setTimeout(() => { categoryDragMoved = false; }, 150);
@@ -482,8 +520,9 @@ function renderQuestions() {
   list.forEach((q, i) => {
     const article = document.createElement("article"); article.className = "qa";
     article.dataset.question = q.question;
-    const isLearned = q.studyStatus === "learned";
-    const isNotLearned = q.studyStatus === "not-learned";
+    const studyStatus = getQuestionStudyStatus(q);
+    const isLearned = studyStatus === "learned";
+    const isNotLearned = studyStatus === "not-learned";
     const questionCategoryName = categories.find(cat => cat.id === q.categoryId)?.name || "Без категорії";
     const showCategoryName = Boolean(query || activeStudyFilter);
     const categoryBadge = showCategoryName ? `<div class="qa-category">${escapeHtml(questionCategoryName)}</div>` : "";
@@ -921,8 +960,11 @@ function enterDemoMode() {
   localStorage.setItem(DEMO_MODE_KEY, "true");
   currentUser = null;
   isDemoMode = true;
+  demoStudyStatuses = loadDemoStudyStatuses();
+  applyDemoStudyStatuses();
   applyDemoModeUI();
   showApp();
+  render();
   setSyncStatus("Демо: локальний режим без синхронізації");
   updateSaveButtonState();
 }
@@ -1052,7 +1094,7 @@ function render() { renderStats(); renderCategories(); renderQuestions(); buildP
 
 document.getElementById("addCategoryBtn").onclick = () => { if (isDemoCreateBlocked()) return; const name = prompt("Назва категорії:"); if (!name || !name.trim()) return; const id = makeId(name); categories.push({ id, name: name.trim() }); activeCategoryId = id; save(); render(); };
 function openNewQuestion() { if (isDemoCreateBlocked()) return; editingIndex = null; document.getElementById("questionModalTitle").textContent = "Нове питання"; questionCategory.value = activeCategoryId; document.getElementById("questionInput").value = ""; setEditorHtml(""); deleteQuestionBtn.classList.add("hidden"); document.getElementById("questionModal").classList.remove("hidden"); focusEditor(); }
-function openEditQuestion(index) { editingIndex = index; const q = questions[index]; document.getElementById("questionModalTitle").textContent = "Редагувати питання"; questionCategory.value = q.categoryId; document.getElementById("questionInput").value = q.question; setEditorHtml(q.answer); deleteQuestionBtn.classList.remove("hidden"); document.getElementById("questionModal").classList.remove("hidden"); focusEditor(); }
+function openEditQuestion(index) { if (isDemoMode) return; editingIndex = index; const q = questions[index]; document.getElementById("questionModalTitle").textContent = "Редагувати питання"; questionCategory.value = q.categoryId; document.getElementById("questionInput").value = q.question; setEditorHtml(q.answer); deleteQuestionBtn.classList.remove("hidden"); document.getElementById("questionModal").classList.remove("hidden"); focusEditor(); }
 document.getElementById("addQuestionBtn").addEventListener("click", openNewQuestion);
 document.getElementById("printBookBtn").addEventListener("click", printFullBook);
 document.getElementById("exportWordBtn").addEventListener("click", exportToWord);
@@ -1073,11 +1115,12 @@ document.querySelectorAll(".editor-toolbar button").forEach(button => {
     focusEditor();
   });
 });
-document.getElementById("saveQuestionBtn").onclick = () => { if (editingIndex === null && isDemoCreateBlocked()) return; const categoryId = questionCategory.value; const question = document.getElementById("questionInput").value.trim(); const answer = getEditorHtml(); if (!question || !answer) { alert("Заповни питання і відповідь"); return; } if (editingIndex !== null) questions[editingIndex] = { ...questions[editingIndex], categoryId, question, answer }; else questions.push({ categoryId, question, answer, studyStatus: "" }); activeCategoryId = categoryId; document.getElementById("questionModal").classList.add("hidden"); save(); render(); };
-deleteQuestionBtn.onclick = () => { if (editingIndex === null) return; deleteQuestion(editingIndex); document.getElementById("questionModal").classList.add("hidden"); editingIndex = null; };
+document.getElementById("saveQuestionBtn").onclick = () => { if (isDemoMode || (editingIndex === null && isDemoCreateBlocked())) return; const categoryId = questionCategory.value; const question = document.getElementById("questionInput").value.trim(); const answer = getEditorHtml(); if (!question || !answer) { alert("Заповни питання і відповідь"); return; } if (editingIndex !== null) questions[editingIndex] = { ...questions[editingIndex], categoryId, question, answer }; else questions.push({ categoryId, question, answer, studyStatus: "" }); activeCategoryId = categoryId; document.getElementById("questionModal").classList.add("hidden"); save(); render(); };
+deleteQuestionBtn.onclick = () => { if (isDemoMode || editingIndex === null) return; deleteQuestion(editingIndex); document.getElementById("questionModal").classList.add("hidden"); editingIndex = null; };
 function renameCategory(id) { const cat = categories.find(c => c.id === id); const name = prompt("Нова назва:", cat.name); if (!name || !name.trim()) return; cat.name = name.trim(); save(); render(); }
 function deleteCategory(id) { if (questions.some(q => q.categoryId === id)) { alert("Спочатку видали або перенеси питання з цієї категорії."); return; } if (!confirm("Видалити категорію?")) return; categories = categories.filter(c => c.id !== id); activeCategoryId = categories[0]?.id || ""; save(); render(); }
 async function deleteQuestion(index) {
+  if (isDemoMode) return;
   if (!confirm("Видалити питання?")) return;
 
   const deletedQuestion = questions[index];

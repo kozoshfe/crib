@@ -1,11 +1,13 @@
-const QUESTIONS_LOCAL_KEY = "qaShpargalkaQuestions";
-const CATEGORIES_LOCAL_KEY = "qaShpargalkaCategories";
-const INTERVIEW_STATE_KEY = "qaInterviewSessionState";
 const DEMO_MODE_KEY = "qaShpargalkaDemoMode";
 const isDemoMode = localStorage.getItem(DEMO_MODE_KEY) === "true";
+const QUESTIONS_LOCAL_KEY = "qaShpargalkaQuestions";
+const CATEGORIES_LOCAL_KEY = "qaShpargalkaCategories";
+const INTERVIEW_STATE_KEY = isDemoMode ? "qaDemoInterviewSessionState" : "qaInterviewSessionState";
+const DEMO_STUDY_STATUS_KEY = "qaDemoInterviewStudyStatuses";
 
 let questions = JSON.parse(localStorage.getItem(QUESTIONS_LOCAL_KEY)) || window.PREFILLED_QUESTIONS || [];
 let categories = JSON.parse(localStorage.getItem(CATEGORIES_LOCAL_KEY)) || window.PREFILLED_CATEGORIES || [];
+let demoStudyStatuses = loadDemoStudyStatuses();
 let currentQuestionIndex = -1;
 let seenQuestionIndexes = [];
 let unknownQuestionIndexes = [];
@@ -26,11 +28,34 @@ const logoutBtn = document.getElementById("logoutBtn");
 
 document.body.classList.toggle("demo-mode", isDemoMode);
 
+function loadDemoStudyStatuses() {
+  try {
+    const statuses = JSON.parse(localStorage.getItem(DEMO_STUDY_STATUS_KEY) || "{}");
+    return statuses && typeof statuses === "object" ? statuses : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+function getStudyStatusKey(question) {
+  return `${question.categoryId}::${question.question}`;
+}
+
+if (isDemoMode) {
+  questions.forEach(question => {
+    question.studyStatus = demoStudyStatuses[getStudyStatusKey(question)] || "";
+  });
+}
+
 function escapeHtml(text) {
   return String(text).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
 function saveQuestions() {
+  if (isDemoMode) {
+    localStorage.setItem(DEMO_STUDY_STATUS_KEY, JSON.stringify(demoStudyStatuses));
+    return;
+  }
   localStorage.setItem(QUESTIONS_LOCAL_KEY, JSON.stringify(questions));
 }
 
@@ -156,7 +181,9 @@ function renderReview() {
 
 function markQuestion(status) {
   if (currentQuestionIndex < 0) return;
-  questions[currentQuestionIndex].studyStatus = status;
+  const question = questions[currentQuestionIndex];
+  question.studyStatus = status;
+  if (isDemoMode) demoStudyStatuses[getStudyStatusKey(question)] = status;
   if (status === "not-learned") unknownQuestionIndexes.push(currentQuestionIndex);
   saveQuestions();
 

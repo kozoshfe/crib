@@ -60,7 +60,8 @@ body { margin: 0; background: #f6f8ff; color: #111827; font-family: Georgia, "Ti
 .action-title { margin: 0 0 8px 12px; color: #6b7280; font-size: 12px; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
 .actions button { min-height: 46px; display: grid; grid-template-columns: 42px minmax(0, 1fr); align-items: center; gap: 10px; border: 0; background: transparent; color: #1f2937; border-radius: 8px; padding: 4px 8px 4px 0; font-size: 16px; font-weight: 900; text-align: left; cursor: pointer; }
 .actions button:hover { background: #f6f7fb; }
-body.demo-mode .actions { display: none !important; }
+body.demo-mode .actions { display: grid; }
+body.demo-mode .add-actions { display: none; }
 body.demo-mode .toolbar-link[href$="questions.html"] { display: none !important; }
 .action-icon { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; background: #f3f5f9; color: #43506a; font-size: 20px; font-weight: 900; line-height: 1; }
 .pdf-icon { background: #fff0f0; color: #ef4444; font-size: 10px; }

@@ -9059,11 +9059,11 @@ const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
 const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
 const TEST_KNOWN_SUPABASE_TABLE = "qa_test_known_state";
 const TEST_KNOWN_SUPABASE_ROW_ID = "qa-test-known-main";
-const TEST_QUESTIONS_KEY = "qaTestQuestionsAllLevels2026";
-const TEST_PROGRESS_KEY = "qaActiveTestProgressHandbookAll2026";
-const TEST_KNOWN_LOCAL_KEY = "qaTestKnownQuestions2026";
 const DEMO_MODE_KEY = "qaShpargalkaDemoMode";
 const isDemoMode = localStorage.getItem(DEMO_MODE_KEY) === "true";
+const TEST_QUESTIONS_KEY = "qaTestQuestionsAllLevels2026";
+const TEST_PROGRESS_KEY = isDemoMode ? "qaDemoTestProgressHandbookAll2026" : "qaActiveTestProgressHandbookAll2026";
+const TEST_KNOWN_LOCAL_KEY = isDemoMode ? "qaDemoTestKnownQuestions2026" : "qaTestKnownQuestions2026";
 const levelLabels = {
   junior: "Junior",
   middle: "Middle",
@@ -9380,6 +9380,7 @@ async function hydrateKnownQuestionStatus() {
   }
 }
 function scheduleKnownQuestionSync() {
+  if (isDemoMode) return;
   clearTimeout(knownSyncTimer);
   knownSyncTimer = setTimeout(async () => {
     if (!loadSupabaseSession()) {
@@ -9440,6 +9441,7 @@ function renderKnownQuestionsList() {
 function openKnownQuestions() {
   renderKnownQuestionsList();
   knownQuestionsModal.classList.remove("hidden");
+  if (isDemoMode) return;
   hydrateKnownQuestionStatus();
 }
 function closeKnownQuestions() {
@@ -9454,6 +9456,7 @@ function setKnownQuestion(questionId, isKnown) {
   else delete knownQuestionStatus[questionId];
   saveKnownQuestionStatus();
   renderKnownQuestionsList();
+  if (isDemoMode) return;
   scheduleKnownQuestionSync();
 }
 function resetTest(level = activeLevel, shouldShuffle = true, shouldSave = true) {

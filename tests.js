@@ -9166,7 +9166,16 @@ let knownSyncTimer = null;
 document.body.classList.toggle("demo-mode", isDemoMode);
 
 const levelTabs = document.querySelectorAll(".level-tab");
+const levelToggleInput = document.getElementById("levelToggle");
 const activeLevelLabel = document.getElementById("activeLevelLabel");
+const LEVEL_TABS_COLLAPSED_KEY = "qaTests.levelTabsCollapsed";
+
+if (levelToggleInput) {
+  levelToggleInput.checked = localStorage.getItem(LEVEL_TABS_COLLAPSED_KEY) !== "true";
+  levelToggleInput.addEventListener("change", () => {
+    localStorage.setItem(LEVEL_TABS_COLLAPSED_KEY, String(!levelToggleInput.checked));
+  });
+}
 const shuffleBtn = document.getElementById("shuffleBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const manageBtn = document.getElementById("manageBtn");

@@ -109,10 +109,10 @@ const doneUnlockClicks = new Map();
 
 const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
-const SUPABASE_TABLE = "qa_questions_state";
-const SUPABASE_ROW_ID = "qa-questions-main";
-const HANDBOOK_SUPABASE_TABLE = "qa_handbook_state";
-const HANDBOOK_SUPABASE_ROW_ID = "qa-handbook-main";
+const SUPABASE_CATEGORIES_TABLE = "qa_question_categories";
+const SUPABASE_TABLE = "qa_questions";
+const HANDBOOK_CATEGORIES_TABLE = "qa_handbook_categories";
+const HANDBOOK_SUPABASE_TABLE = "qa_handbook_questions";
 const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
 const DEMO_MODE_KEY = "qaShpargalkaDemoMode";
 let isDemoMode = localStorage.getItem(DEMO_MODE_KEY) === "true";
@@ -186,9 +186,14 @@ async function hydrateHandbookCoverageSource() {
   handbookQuestions = loadSavedHandbookQuestions();
 
   try {
-    const query = `/rest/v1/${HANDBOOK_SUPABASE_TABLE}?id=eq.${encodeURIComponent(HANDBOOK_SUPABASE_ROW_ID)}&select=state,updated_at`;
-    const rows = await supabaseJson(query, { headers: { "Accept": "application/json" } });
-    const state = Array.isArray(rows) ? rows[0]?.state : null;
+    const [remoteCategories, remoteQuestions] = await Promise.all([
+      supabaseJson(`/rest/v1/${HANDBOOK_CATEGORIES_TABLE}?select=id,name,sort_order&order=sort_order.asc`, { headers: { "Accept": "application/json" } }),
+      supabaseJson(`/rest/v1/${HANDBOOK_SUPABASE_TABLE}?select=category_id,question,answer,study_status,sort_order&order=sort_order.asc`, { headers: { "Accept": "application/json" } })
+    ]);
+    const state = {
+      categories: (remoteCategories || []).map(item => ({ id: item.id, name: item.name })),
+      questions: (remoteQuestions || []).map(item => ({ categoryId: item.category_id, question: item.question, answer: item.answer, studyStatus: item.study_status || "" }))
+    };
     if (applyHandbookState(state)) {
       mirrorQuestionsFromHandbook(true);
       render();
@@ -272,8 +277,8 @@ function applyCloudState(state) {
 }
 function humanizeSupabaseError(error) {
   const message = String(error?.message || "невідома помилка");
-  if (message.includes("relation") && message.includes("does not exist")) return "Не знайдена таблиця qa_questions_state у Supabase";
-  if (message.toLowerCase().includes("row-level security")) return "Перевір RLS policies для qa_questions_state";
+  if (message.includes("relation") && message.includes("does not exist")) return "Не знайдені нові таблиці QA у Supabase — запусти supabase-normalized-schema.sql";
+  if (message.toLowerCase().includes("row-level security")) return "Перевір RLS policies для нових таблиць QA";
   return message;
 }
 function saveSession(session) {
@@ -357,18 +362,24 @@ async function supabaseJson(path, options = {}, retried = false) {
   return text ? JSON.parse(text) : null;
 }
 async function loadRemoteState() {
-  const query = `/rest/v1/${SUPABASE_TABLE}?id=eq.${encodeURIComponent(SUPABASE_ROW_ID)}&select=state,updated_at`;
-  const rows = await supabaseJson(query, { headers: { "Accept": "application/json" } });
-  return Array.isArray(rows) ? rows[0] : null;
+  const [remoteCategories, remoteQuestions] = await Promise.all([
+    supabaseJson(`/rest/v1/${SUPABASE_CATEGORIES_TABLE}?select=id,name,source,sort_order,updated_at&order=sort_order.asc`, { headers: { "Accept": "application/json" } }),
+    supabaseJson(`/rest/v1/${SUPABASE_TABLE}?select=id,category_id,source,question,note,done,covered_by,created_at,sort_order,updated_at&order=sort_order.asc`, { headers: { "Accept": "application/json" } })
+  ]);
+  const categories = (remoteCategories || []).map(item => ({ id: item.id, name: item.name, source: item.source }));
+  const questions = (remoteQuestions || []).map(item => ({ id: item.id, categoryId: item.category_id, source: item.source, question: item.question, note: item.note || "", done: item.done, coveredBy: item.covered_by || "", createdAt: item.created_at || "" }));
+  const updatedAt = [...(remoteCategories || []), ...(remoteQuestions || [])].map(item => item.updated_at).filter(Boolean).sort().at(-1) || null;
+  return categories.length || questions.length ? { state: { categories, questions, updatedAt }, updated_at: updatedAt } : null;
 }
 async function upsertRemoteState(state) {
-  return await supabaseJson(`/rest/v1/${SUPABASE_TABLE}?on_conflict=id`, {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Prefer": "resolution=merge-duplicates,return=minimal"
-    },
-    body: { id: SUPABASE_ROW_ID, state, updated_at: state.updatedAt }
+  await supabaseJson(`/rest/v1/${SUPABASE_CATEGORIES_TABLE}?id=not.is.null`, { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+  if (state.categories.length) await supabaseJson(`/rest/v1/${SUPABASE_CATEGORIES_TABLE}`, {
+    method: "POST", headers: { "Prefer": "return=minimal" },
+    body: state.categories.map((item, index) => ({ id: item.id, name: item.name, source: item.source || "handbook", sort_order: index, updated_at: state.updatedAt }))
+  });
+  if (state.questions.length) await supabaseJson(`/rest/v1/${SUPABASE_TABLE}`, {
+    method: "POST", headers: { "Prefer": "return=minimal" },
+    body: state.questions.map((item, index) => ({ id: item.id || makeId("question", item.question), category_id: item.categoryId, source: item.source || "manual", question: item.question, note: item.note || "", done: Boolean(item.done), covered_by: item.coveredBy || null, created_at: item.createdAt || null, sort_order: index, updated_at: state.updatedAt }))
   });
 }
 async function login() {

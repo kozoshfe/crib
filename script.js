@@ -16,10 +16,9 @@ let pendingQuestionJump = null;
 
 const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
-const SUPABASE_TABLE = "qa_handbook_state";
-const SUPABASE_ROW_ID = "qa-handbook-main";
-const QUESTIONS_SUPABASE_TABLE = "qa_questions_state";
-const QUESTIONS_SUPABASE_ROW_ID = "qa-questions-main";
+const SUPABASE_CATEGORIES_TABLE = "qa_handbook_categories";
+const SUPABASE_QUESTIONS_TABLE = "qa_handbook_questions";
+const QUESTIONS_SUPABASE_TABLE = "qa_questions";
 const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
 const DEMO_MODE_KEY = "qaShpargalkaDemoMode";
 const DEMO_STUDY_STATUS_KEY = "qaShpargalkaDemoStudyStatuses";
@@ -759,8 +758,8 @@ function applyCloudState(state) {
 }
 function humanizeSupabaseError(error) {
   const message = String(error?.message || "невідома помилка");
-  if (message.includes("relation") && message.includes("does not exist")) return "Не знайдена таблиця qa_handbook_state у Supabase";
-  if (message.toLowerCase().includes("row-level security")) return "Перевір RLS policies для qa_handbook_state";
+  if (message.includes("relation") && message.includes("does not exist")) return "Не знайдені нові таблиці QA у Supabase — запусти supabase-normalized-schema.sql";
+  if (message.toLowerCase().includes("row-level security")) return "Перевір RLS policies для нових таблиць QA";
   return message;
 }
 function saveSupabaseSession(session) {
@@ -845,18 +844,30 @@ async function supabaseJson(path, options = {}, retried = false) {
   return text ? JSON.parse(text) : null;
 }
 async function loadRemoteState() {
-  const query = `/rest/v1/${SUPABASE_TABLE}?id=eq.${encodeURIComponent(SUPABASE_ROW_ID)}&select=state,updated_at`;
-  const rows = await supabaseJson(query, { headers: { "Accept": "application/json" } });
-  return Array.isArray(rows) ? rows[0] : null;
+  const [remoteCategories, remoteQuestions] = await Promise.all([
+    supabaseJson(`/rest/v1/${SUPABASE_CATEGORIES_TABLE}?select=id,name,sort_order,updated_at&order=sort_order.asc`, { headers: { "Accept": "application/json" } }),
+    supabaseJson(`/rest/v1/${SUPABASE_QUESTIONS_TABLE}?select=category_id,question,answer,study_status,sort_order,updated_at&order=sort_order.asc`, { headers: { "Accept": "application/json" } })
+  ]);
+  const categories = (remoteCategories || []).map(item => ({ id: item.id, name: item.name }));
+  const questions = (remoteQuestions || []).map(item => ({
+    categoryId: item.category_id,
+    question: item.question,
+    answer: item.answer,
+    studyStatus: item.study_status || ""
+  }));
+  const updatedAt = [...(remoteCategories || []), ...(remoteQuestions || [])]
+    .map(item => item.updated_at).filter(Boolean).sort().at(-1) || null;
+  return categories.length || questions.length ? { state: { categories, questions, updatedAt }, updated_at: updatedAt } : null;
 }
 async function upsertRemoteState(state) {
-  return await supabaseJson(`/rest/v1/${SUPABASE_TABLE}?on_conflict=id`, {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Prefer": "resolution=merge-duplicates,return=minimal"
-    },
-    body: { id: SUPABASE_ROW_ID, state, updated_at: state.updatedAt }
+  await supabaseJson(`/rest/v1/${SUPABASE_CATEGORIES_TABLE}?id=not.is.null`, { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+  if (state.categories.length) await supabaseJson(`/rest/v1/${SUPABASE_CATEGORIES_TABLE}`, {
+    method: "POST", headers: { "Prefer": "return=minimal" },
+    body: state.categories.map((item, index) => ({ id: item.id, name: item.name, sort_order: index, updated_at: state.updatedAt }))
+  });
+  if (state.questions.length) await supabaseJson(`/rest/v1/${SUPABASE_QUESTIONS_TABLE}`, {
+    method: "POST", headers: { "Prefer": "return=minimal" },
+    body: state.questions.map((item, index) => ({ id: `${item.categoryId}:${index}:${item.question}`, category_id: item.categoryId, question: item.question, answer: item.answer, study_status: item.studyStatus || "", sort_order: index, updated_at: state.updatedAt }))
   });
 }
 function resetLocalCoverageForDeletedAnswer(coverageValue) {
@@ -876,34 +887,11 @@ function resetLocalCoverageForDeletedAnswer(coverageValue) {
 }
 async function resetRemoteCoverageForDeletedAnswer(coverageValue) {
   if (!currentUser) return 0;
-
-  const query = `/rest/v1/${QUESTIONS_SUPABASE_TABLE}?id=eq.${encodeURIComponent(QUESTIONS_SUPABASE_ROW_ID)}&select=state,updated_at`;
+  const query = `/rest/v1/${QUESTIONS_SUPABASE_TABLE}?covered_by=eq.${encodeURIComponent(coverageValue)}&select=id`;
   const rows = await supabaseJson(query, { headers: { "Accept": "application/json" } });
-  const remote = Array.isArray(rows) ? rows[0] : null;
-  const state = remote?.state;
-  if (!state || !Array.isArray(state.questions)) return 0;
-
-  const updatedQuestions = state.questions.filter(question => question.coveredBy !== coverageValue);
-  const changedCount = state.questions.length - updatedQuestions.length;
-
-  if (!changedCount) return 0;
-
-  const nextState = {
-    ...state,
-    questions: updatedQuestions,
-    updatedAt: new Date().toISOString()
-  };
-
-  await supabaseJson(`/rest/v1/${QUESTIONS_SUPABASE_TABLE}?on_conflict=id`, {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Prefer": "resolution=merge-duplicates,return=minimal"
-    },
-    body: { id: QUESTIONS_SUPABASE_ROW_ID, state: nextState, updated_at: nextState.updatedAt }
-  });
-
-  return changedCount;
+  if (!rows?.length) return 0;
+  await supabaseJson(`/rest/v1/${QUESTIONS_SUPABASE_TABLE}?covered_by=eq.${encodeURIComponent(coverageValue)}`, { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+  return rows.length;
 }
 async function resetCoverageForDeletedAnswer(deletedQuestion) {
   if (!deletedQuestion?.categoryId || !deletedQuestion?.question) return;

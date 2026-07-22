@@ -6,8 +6,8 @@ const INTERVIEW_STATE_KEY = isDemoMode ? "qaDemoInterviewSessionState" : "qaInte
 const DEMO_STUDY_STATUS_KEY = "qaDemoInterviewStudyStatuses";
 const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
-const HANDBOOK_SUPABASE_TABLE = "qa_handbook_state";
-const HANDBOOK_SUPABASE_ROW_ID = "qa-handbook-main";
+const HANDBOOK_CATEGORIES_TABLE = "qa_handbook_categories";
+const HANDBOOK_SUPABASE_TABLE = "qa_handbook_questions";
 
 let questions = JSON.parse(localStorage.getItem(QUESTIONS_LOCAL_KEY)) || window.PREFILLED_QUESTIONS || [];
 let categories = JSON.parse(localStorage.getItem(CATEGORIES_LOCAL_KEY)) || window.PREFILLED_CATEGORIES || [];
@@ -65,18 +65,21 @@ function saveQuestions() {
 
 async function hydrateQuestionsFromDatabase() {
   try {
-    const query = `/rest/v1/${HANDBOOK_SUPABASE_TABLE}?id=eq.${encodeURIComponent(HANDBOOK_SUPABASE_ROW_ID)}&select=state`;
-    const response = await fetch(`${SUPABASE_URL}${query}`, {
-      headers: {
-        "apikey": SUPABASE_ANON_KEY,
-        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
-        "Accept": "application/json"
-      }
-    });
-    if (!response.ok) throw new Error(`Supabase request failed (${response.status})`);
-
-    const rows = await response.json();
-    const state = Array.isArray(rows) ? rows[0]?.state : null;
+    const headers = {
+      "apikey": SUPABASE_ANON_KEY,
+      "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+      "Accept": "application/json"
+    };
+    const [categoriesResponse, questionsResponse] = await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/${HANDBOOK_CATEGORIES_TABLE}?select=id,name,sort_order&order=sort_order.asc`, { headers }),
+      fetch(`${SUPABASE_URL}/rest/v1/${HANDBOOK_SUPABASE_TABLE}?select=category_id,question,answer,study_status,sort_order&order=sort_order.asc`, { headers })
+    ]);
+    if (!categoriesResponse.ok || !questionsResponse.ok) throw new Error("Supabase request failed");
+    const [remoteCategories, remoteQuestions] = await Promise.all([categoriesResponse.json(), questionsResponse.json()]);
+    const state = {
+      categories: (remoteCategories || []).map(item => ({ id: item.id, name: item.name })),
+      questions: (remoteQuestions || []).map(item => ({ categoryId: item.category_id, question: item.question, answer: item.answer, studyStatus: item.study_status || "" }))
+    };
     if (!state || !Array.isArray(state.categories) || !Array.isArray(state.questions)) return;
 
     categories = state.categories;

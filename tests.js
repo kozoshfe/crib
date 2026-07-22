@@ -9057,8 +9057,7 @@ const levelQuestionIndexes = {
 const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
 const SUPABASE_SESSION_KEY = "qaShpargalkaSupabaseSession";
-const TEST_KNOWN_SUPABASE_TABLE = "qa_test_known_state";
-const TEST_KNOWN_SUPABASE_ROW_ID = "qa-test-known-main";
+const TEST_KNOWN_SUPABASE_TABLE = "qa_test_known_questions";
 const DEMO_MODE_KEY = "qaShpargalkaDemoMode";
 const isDemoMode = localStorage.getItem(DEMO_MODE_KEY) === "true";
 const TEST_QUESTIONS_KEY = "qaTestQuestionsAllLevels2026";
@@ -9342,20 +9341,18 @@ function applyKnownCloudState(state) {
   return true;
 }
 async function loadRemoteKnownQuestionStatus() {
-  const query = `/rest/v1/${TEST_KNOWN_SUPABASE_TABLE}?id=eq.${encodeURIComponent(TEST_KNOWN_SUPABASE_ROW_ID)}&select=state,updated_at`;
+  const query = `/rest/v1/${TEST_KNOWN_SUPABASE_TABLE}?select=question_id,known,updated_at`;
   const rows = await supabaseJson(query, { headers: { "Accept": "application/json" } });
-  return Array.isArray(rows) ? rows[0] : null;
+  if (!Array.isArray(rows) || !rows.length) return null;
+  const knownQuestionStatus = Object.fromEntries(rows.filter(item => item.known).map(item => [item.question_id, true]));
+  const updatedAt = rows.map(item => item.updated_at).filter(Boolean).sort().at(-1) || null;
+  return { state: { knownQuestionStatus, updatedAt }, updated_at: updatedAt };
 }
 async function upsertRemoteKnownQuestionStatus() {
   const state = getKnownCloudState();
-  await supabaseJson(`/rest/v1/${TEST_KNOWN_SUPABASE_TABLE}?on_conflict=id`, {
-    method: "POST",
-    headers: {
-      "Accept": "application/json",
-      "Prefer": "resolution=merge-duplicates,return=minimal"
-    },
-    body: { id: TEST_KNOWN_SUPABASE_ROW_ID, state, updated_at: state.updatedAt }
-  });
+  await supabaseJson(`/rest/v1/${TEST_KNOWN_SUPABASE_TABLE}?question_id=not.is.null`, { method: "DELETE", headers: { "Prefer": "return=minimal" } });
+  const knownRows = Object.keys(state.knownQuestionStatus).filter(id => state.knownQuestionStatus[id]).map(question_id => ({ question_id, known: true, updated_at: state.updatedAt }));
+  if (knownRows.length) await supabaseJson(`/rest/v1/${TEST_KNOWN_SUPABASE_TABLE}`, { method: "POST", headers: { "Prefer": "return=minimal" }, body: knownRows });
 }
 async function hydrateKnownQuestionStatus() {
   if (!loadSupabaseSession()) {
@@ -9376,7 +9373,7 @@ async function hydrateKnownQuestionStatus() {
     setKnownSyncStatus("Supabase: готово", "success");
   } catch (error) {
     console.warn("Failed to sync known test questions", error);
-    setKnownSyncStatus("Supabase: потрібна таблиця qa_test_known_state", "error");
+    setKnownSyncStatus("Supabase: потрібна таблиця qa_test_known_questions", "error");
   }
 }
 function scheduleKnownQuestionSync() {

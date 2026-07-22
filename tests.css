@@ -128,9 +128,9 @@ body.demo-mode .test-page { padding-top: 126px; }
   .app-nav .toolbar-link { flex: 1 1 0; }
   .level-toggle { width: 100%; min-height: 46px; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; border: 1px solid #dce3ef; border-radius: 8px; background: rgba(255,255,255,.9); color: #334155; padding: 10px 14px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 20px rgba(15,23,42,.05); }
   .level-toggle strong { color: #111827; }
-  .level-toggle-action { color: #4f46e5; font-size: 13px; font-weight: 900; }
+  .level-toggle-action { color: #4f46e5; font-size: 27px; font-weight: 400; line-height: .7; }
   .level-tabs { grid-template-columns: 1fr 1fr; }
-  .level-selector.collapsed .level-tabs { display: none; }
+  .level-tabs[hidden] { display: none; }
   .test-topline { flex-direction: column; gap: 6px; }
   .question-panel { padding: 24px 18px; }
   .question-panel h1 { font-size: 24px; }

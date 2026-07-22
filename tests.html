@@ -29,9 +29,9 @@
 
     <section class="test-shell" aria-live="polite">
       <section class="level-selector" aria-label="Рівень тесту">
-        <button id="levelToggle" class="level-toggle" type="button" aria-expanded="true" aria-controls="levelTabs">
+        <button id="levelToggle" class="level-toggle" type="button" aria-label="Згорнути вибір рівня" aria-expanded="true" aria-controls="levelTabs">
           <span>Рівень: <strong id="activeLevelLabel">Junior</strong></span>
-          <span class="level-toggle-action">Згорнути</span>
+          <span class="level-toggle-action" aria-hidden="true">↓</span>
         </button>
         <div id="levelTabs" class="level-tabs">
           <button class="level-tab active" type="button" data-level="junior">Junior</button>
@@ -40,7 +40,6 @@
           <button class="level-tab" type="button" data-level="lead">QA Lead</button>
         </div>
       </section>
-      </div>
 
       <div class="test-topline">
         <div id="questionProgress">Питання 1 / 20</div>
@@ -128,6 +127,6 @@
   </div>
 
   <script src="tests-all-data.js?v=1"></script>
-  <script src="tests.js?v=20"></script>
+  <script src="tests.js?v=21"></script>
 </body>
 </html>

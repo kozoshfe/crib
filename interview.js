@@ -45,6 +45,17 @@ function getStudyStatusKey(question) {
   return `${question.categoryId}::${question.question}`;
 }
 
+function getQuestionIndexByKey(questionKey) {
+  return questions.findIndex(question => getStudyStatusKey(question) === questionKey);
+}
+
+function getQuestionIndexesByKeys(questionKeys) {
+  if (!Array.isArray(questionKeys)) return null;
+  return questionKeys
+    .map(getQuestionIndexByKey)
+    .filter(index => index >= 0);
+}
+
 if (isDemoMode) {
   questions.forEach(question => {
     question.studyStatus = demoStudyStatuses[getStudyStatusKey(question)] || "";
@@ -101,6 +112,9 @@ function saveInterviewState(finished = false) {
     currentQuestionIndex,
     seenQuestionIndexes,
     unknownQuestionIndexes,
+    currentQuestionKey: currentQuestionIndex >= 0 ? getStudyStatusKey(questions[currentQuestionIndex]) : null,
+    seenQuestionKeys: seenQuestionIndexes.map(index => questions[index] ? getStudyStatusKey(questions[index]) : null).filter(Boolean),
+    unknownQuestionKeys: unknownQuestionIndexes.map(index => questions[index] ? getStudyStatusKey(questions[index]) : null).filter(Boolean),
     finished,
     questionsCount: questions.length
   }));
@@ -108,15 +122,24 @@ function saveInterviewState(finished = false) {
 
 function restoreInterviewState() {
   const state = JSON.parse(localStorage.getItem(INTERVIEW_STATE_KEY) || "null");
-  if (!state || state.questionsCount !== questions.length) return false;
+  const hasKeyState = Boolean(state?.currentQuestionKey) || Array.isArray(state?.seenQuestionKeys);
+  if (!state || (!hasKeyState && state.questionsCount !== questions.length)) return false;
 
-  seenQuestionIndexes = Array.isArray(state.seenQuestionIndexes)
+  const savedSeenIndexes = getQuestionIndexesByKeys(state.seenQuestionKeys);
+  const savedUnknownIndexes = getQuestionIndexesByKeys(state.unknownQuestionKeys);
+  const savedCurrentIndex = state.currentQuestionKey
+    ? getQuestionIndexByKey(state.currentQuestionKey)
+    : -1;
+
+  seenQuestionIndexes = savedSeenIndexes || (Array.isArray(state.seenQuestionIndexes)
     ? state.seenQuestionIndexes.filter(index => questions[index])
-    : [];
-  unknownQuestionIndexes = Array.isArray(state.unknownQuestionIndexes)
+    : []);
+  unknownQuestionIndexes = savedUnknownIndexes || (Array.isArray(state.unknownQuestionIndexes)
     ? state.unknownQuestionIndexes.filter(index => questions[index])
-    : [];
-  currentQuestionIndex = questions[state.currentQuestionIndex] ? state.currentQuestionIndex : -1;
+    : []);
+  currentQuestionIndex = savedCurrentIndex >= 0
+    ? savedCurrentIndex
+    : (questions[state.currentQuestionIndex] ? state.currentQuestionIndex : -1);
 
   if (state.finished) {
     renderReview();

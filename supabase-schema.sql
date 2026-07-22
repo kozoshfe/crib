@@ -26,6 +26,14 @@ drop policy if exists "Authenticated users can read QA handbook" on public.qa_ha
 drop policy if exists "Authenticated users can insert QA handbook" on public.qa_handbook_state;
 drop policy if exists "Authenticated users can update QA handbook" on public.qa_handbook_state;
 drop policy if exists "Authenticated users can delete QA handbook" on public.qa_handbook_state;
+drop policy if exists "Demo users can read QA handbook" on public.qa_handbook_state;
+
+-- Демо читає тільки публічний навчальний набір. Змінювати його можуть лише авторизовані користувачі.
+create policy "Demo users can read QA handbook"
+on public.qa_handbook_state
+for select
+to anon
+using (id = 'qa-handbook-main');
 
 create policy "Authenticated users can read QA handbook"
 on public.qa_handbook_state

@@ -967,6 +967,7 @@ function enterDemoMode() {
   render();
   setSyncStatus("Демо: локальний режим без синхронізації");
   updateSaveButtonState();
+  hydrateFromSupabase();
 }
 function bindAuthUI() {
   document.getElementById("simpleLoginBtn")?.addEventListener("click", authLogin);
@@ -979,24 +980,22 @@ function bindAuthUI() {
   });
 }
 async function hydrateFromSupabase() {
-  if (!currentUser) return false;
-
   try {
-    setSyncStatus("Supabase: завантаження...");
+    setSyncStatus(currentUser ? "Supabase: завантаження..." : "Демо: завантаження питань...");
     const data = await loadRemoteState();
 
     if (data?.state && applyCloudState(data.state)) {
       isHydratingRemote = true;
       lastRemoteUpdatedAt = data.state.updatedAt || data.updated_at || null;
-      clearSavedLocalData();
+      if (currentUser) clearSavedLocalData();
       isHydratingRemote = false;
       activateQuestionDeepLink();
       render();
-    } else if (hasLocalChanges() || questions.length) {
+    } else if (currentUser && (hasLocalChanges() || questions.length)) {
       await syncDataToSupabase();
     }
 
-    setSyncStatus("Supabase: готово");
+    setSyncStatus(currentUser ? "Supabase: готово" : "Демо: питання завантажено з бази");
     updateSaveButtonState("success");
     return true;
   } catch (error) {
@@ -1079,6 +1078,7 @@ async function initSupabase() {
     showApp();
     setSyncStatus("Демо: локальний режим без синхронізації");
     updateSaveButtonState();
+    await hydrateFromSupabase();
     return;
   }
   const session = loadSupabaseSession();

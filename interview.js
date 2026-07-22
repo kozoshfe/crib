@@ -4,6 +4,10 @@ const QUESTIONS_LOCAL_KEY = "qaShpargalkaQuestions";
 const CATEGORIES_LOCAL_KEY = "qaShpargalkaCategories";
 const INTERVIEW_STATE_KEY = isDemoMode ? "qaDemoInterviewSessionState" : "qaInterviewSessionState";
 const DEMO_STUDY_STATUS_KEY = "qaDemoInterviewStudyStatuses";
+const SUPABASE_URL = "https://qzcapeempzzdhicsweqz.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_nXxnpG6C_RO9mVqcYEt1mg_Z9Z-dpDr";
+const HANDBOOK_SUPABASE_TABLE = "qa_handbook_state";
+const HANDBOOK_SUPABASE_ROW_ID = "qa-handbook-main";
 
 let questions = JSON.parse(localStorage.getItem(QUESTIONS_LOCAL_KEY)) || window.PREFILLED_QUESTIONS || [];
 let categories = JSON.parse(localStorage.getItem(CATEGORIES_LOCAL_KEY)) || window.PREFILLED_CATEGORIES || [];
@@ -57,6 +61,36 @@ function saveQuestions() {
     return;
   }
   localStorage.setItem(QUESTIONS_LOCAL_KEY, JSON.stringify(questions));
+}
+
+async function hydrateQuestionsFromDatabase() {
+  try {
+    const query = `/rest/v1/${HANDBOOK_SUPABASE_TABLE}?id=eq.${encodeURIComponent(HANDBOOK_SUPABASE_ROW_ID)}&select=state`;
+    const response = await fetch(`${SUPABASE_URL}${query}`, {
+      headers: {
+        "apikey": SUPABASE_ANON_KEY,
+        "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+        "Accept": "application/json"
+      }
+    });
+    if (!response.ok) throw new Error(`Supabase request failed (${response.status})`);
+
+    const rows = await response.json();
+    const state = Array.isArray(rows) ? rows[0]?.state : null;
+    if (!state || !Array.isArray(state.categories) || !Array.isArray(state.questions)) return;
+
+    categories = state.categories;
+    questions = state.questions;
+    if (isDemoMode) {
+      questions.forEach(question => {
+        question.studyStatus = demoStudyStatuses[getStudyStatusKey(question)] || "";
+      });
+    }
+
+    if (!restoreInterviewState()) renderQuestion();
+  } catch (error) {
+    console.warn("Failed to load interview questions from Supabase", error);
+  }
 }
 
 function saveInterviewState(finished = false) {
@@ -233,3 +267,4 @@ exportUnknownBtn.addEventListener("click", () => {
 if (!restoreInterviewState()) {
   renderQuestion();
 }
+hydrateQuestionsFromDatabase();

@@ -185,12 +185,6 @@ async function hydrateHandbookCoverageSource() {
   handbookCategories = loadSavedHandbookCategories();
   handbookQuestions = loadSavedHandbookQuestions();
 
-  if (!currentUser) {
-    mirrorQuestionsFromHandbook(false);
-    render();
-    return;
-  }
-
   try {
     const query = `/rest/v1/${HANDBOOK_SUPABASE_TABLE}?id=eq.${encodeURIComponent(HANDBOOK_SUPABASE_ROW_ID)}&select=state,updated_at`;
     const rows = await supabaseJson(query, { headers: { "Accept": "application/json" } });
@@ -419,6 +413,7 @@ function enterDemoMode() {
   showApp();
   setSyncStatus("Демо: локальний режим без синхронізації");
   updateSaveButtonState();
+  hydrateHandbookCoverageSource();
 }
 async function hydrateFromSupabase() {
   if (!currentUser) return false;
@@ -944,6 +939,7 @@ render();
 if (isDemoMode) {
   showApp();
   setSyncStatus("Демо: локальний режим без синхронізації");
+  hydrateHandbookCoverageSource();
 } else {
   handleSession(loadSession());
 }

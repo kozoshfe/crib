@@ -183,3 +183,11 @@ body.demo-mode .test-page { padding-top: 126px; }
   .book-toolbar .app-nav .toolbar-link, .app-nav .toolbar-link { justify-content: center; }
   .book-toolbar .logout, .logout { position: absolute; top: 12px; right: 14px; order: initial; width: auto; min-width: 88px; min-height: 38px; padding: 8px 12px; }
 }
+
+/* Keep the toolbar flush to the top on every phone page. */
+@media (max-width: 760px) {
+  .test-page, body.demo-mode .test-page { padding: 0 0 40px; }
+  .test-shell { margin-top: 24px; padding: 0 14px; }
+  .interview-page { padding: 0 0 40px; }
+  .interview-shell { margin-top: 24px; padding: 0 14px; }
+}

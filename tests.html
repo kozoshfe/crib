@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QA Tests</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="tests.css?v=23" />
+  <link rel="stylesheet" href="tests.css?v=24" />
 </head>
 <body>
   <main class="test-page">
@@ -29,10 +29,11 @@
 
     <section class="test-shell" aria-live="polite">
       <section class="level-selector" aria-label="Рівень тесту">
-        <button id="levelToggle" class="level-toggle" type="button" aria-label="Згорнути вибір рівня" aria-expanded="true" aria-controls="levelTabs">
+        <input id="levelToggle" class="level-toggle-input" type="checkbox" checked />
+        <label class="level-toggle" for="levelToggle">
           <span>Рівень: <strong id="activeLevelLabel">Junior</strong></span>
-          <span class="level-toggle-action" aria-hidden="true">↓</span>
-        </button>
+          <span class="level-toggle-action" aria-hidden="true"><span class="level-arrow-down">↓</span><span class="level-arrow-up">↑</span></span>
+        </label>
         <div id="levelTabs" class="level-tabs">
           <button class="level-tab active" type="button" data-level="junior">Junior</button>
           <button class="level-tab" type="button" data-level="middle">Middle</button>
@@ -127,6 +128,6 @@
   </div>
 
   <script src="tests-all-data.js?v=1"></script>
-  <script src="tests.js?v=21"></script>
+  <script src="tests.js?v=22"></script>
 </body>
 </html>

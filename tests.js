@@ -9166,8 +9166,6 @@ let knownSyncTimer = null;
 document.body.classList.toggle("demo-mode", isDemoMode);
 
 const levelTabs = document.querySelectorAll(".level-tab");
-const levelToggle = document.getElementById("levelToggle");
-const levelTabsContainer = document.getElementById("levelTabs");
 const activeLevelLabel = document.getElementById("activeLevelLabel");
 const shuffleBtn = document.getElementById("shuffleBtn");
 const logoutBtn = document.getElementById("logoutBtn");
@@ -9861,13 +9859,6 @@ function renderResult(shouldSave = true) {
 
 levelTabs.forEach(tab => {
   tab.addEventListener("click", () => resetTest(tab.dataset.level));
-});
-levelToggle?.addEventListener("click", () => {
-  const isCollapsed = !levelTabsContainer.hidden;
-  levelTabsContainer.hidden = isCollapsed;
-  levelToggle.setAttribute("aria-expanded", String(!isCollapsed));
-  levelToggle.setAttribute("aria-label", isCollapsed ? "Розгорнути вибір рівня" : "Згорнути вибір рівня");
-  levelToggle.querySelector(".level-toggle-action").textContent = isCollapsed ? "↑" : "↓";
 });
 shuffleBtn.addEventListener("click", () => resetTest(activeLevel, true));
 manageBtn.addEventListener("click", openManager);

@@ -89,31 +89,32 @@ insert into public.qa_handbook_categories (id, name, sort_order, updated_at)
 select category.value ->> 'id', category.value ->> 'name', category.ordinality, source.updated_at
 from public.qa_handbook_state source
 cross join lateral jsonb_array_elements(coalesce(source.state -> 'categories', '[]'::jsonb)) with ordinality category(value, ordinality)
-on conflict (id) do update set name = excluded.name, sort_order = excluded.sort_order, updated_at = excluded.updated_at;
+-- У старому JSON можуть бути дублікати id; перший запис уже достатній для міграції.
+on conflict (id) do nothing;
 
 insert into public.qa_handbook_questions (id, category_id, question, answer, study_status, sort_order, updated_at)
 select md5(source.id || ':' || question.ordinality::text), question.value ->> 'categoryId', question.value ->> 'question', question.value ->> 'answer', coalesce(question.value ->> 'studyStatus', ''), question.ordinality, source.updated_at
 from public.qa_handbook_state source
 cross join lateral jsonb_array_elements(coalesce(source.state -> 'questions', '[]'::jsonb)) with ordinality question(value, ordinality)
-on conflict (id) do update set category_id = excluded.category_id, question = excluded.question, answer = excluded.answer, study_status = excluded.study_status, sort_order = excluded.sort_order, updated_at = excluded.updated_at;
+on conflict (id) do nothing;
 
 insert into public.qa_question_categories (id, name, source, sort_order, updated_at)
 select category.value ->> 'id', category.value ->> 'name', coalesce(category.value ->> 'source', 'handbook'), category.ordinality, source.updated_at
 from public.qa_questions_state source
 cross join lateral jsonb_array_elements(coalesce(source.state -> 'categories', '[]'::jsonb)) with ordinality category(value, ordinality)
-on conflict (id) do update set name = excluded.name, source = excluded.source, sort_order = excluded.sort_order, updated_at = excluded.updated_at;
+on conflict (id) do nothing;
 
 insert into public.qa_questions (id, category_id, source, question, note, done, covered_by, created_at, sort_order, updated_at)
 select coalesce(question.value ->> 'id', md5(source.id || ':' || question.ordinality::text)), question.value ->> 'categoryId', coalesce(question.value ->> 'source', 'manual'), question.value ->> 'question', coalesce(question.value ->> 'note', ''), coalesce((question.value ->> 'done')::boolean, false), nullif(question.value ->> 'coveredBy', ''), nullif(question.value ->> 'createdAt', '')::timestamptz, question.ordinality, source.updated_at
 from public.qa_questions_state source
 cross join lateral jsonb_array_elements(coalesce(source.state -> 'questions', '[]'::jsonb)) with ordinality question(value, ordinality)
-on conflict (id) do update set category_id = excluded.category_id, source = excluded.source, question = excluded.question, note = excluded.note, done = excluded.done, covered_by = excluded.covered_by, created_at = excluded.created_at, sort_order = excluded.sort_order, updated_at = excluded.updated_at;
+on conflict (id) do nothing;
 
 insert into public.qa_test_known_questions (question_id, known, updated_at)
 select known.key, coalesce((known.value #>> '{}')::boolean, false), source.updated_at
 from public.qa_test_known_state source
 cross join lateral jsonb_each(coalesce(source.state -> 'knownQuestionStatus', '{}'::jsonb)) known(key, value)
-on conflict (question_id) do update set known = excluded.known, updated_at = excluded.updated_at;
+on conflict (question_id) do nothing;
 
 alter table public.qa_handbook_categories enable row level security;
 alter table public.qa_handbook_questions enable row level security;

@@ -190,3 +190,12 @@ textarea { resize: vertical; line-height: 1.55; }
   .app-nav .toolbar-link { font-size: 0; gap: 0; }
   .app-nav .toolbar-link::before { width: 24px; height: 24px; font-size: 21px; }
 }
+
+/* Phone toolbar alignment */
+@media (max-width: 760px) {
+  .book-toolbar { position: relative; }
+  .toolbar-brand { padding-right: 108px; }
+  .book-toolbar .app-nav, .app-nav { grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); }
+  .book-toolbar .app-nav .toolbar-link, .app-nav .toolbar-link { justify-content: center; }
+  .book-toolbar .logout, .logout { position: absolute; top: 12px; right: 14px; order: initial; width: auto; min-width: 88px; min-height: 38px; padding: 8px 12px; }
+}

@@ -9166,6 +9166,9 @@ let knownSyncTimer = null;
 document.body.classList.toggle("demo-mode", isDemoMode);
 
 const levelTabs = document.querySelectorAll(".level-tab");
+const levelSelector = document.querySelector(".level-selector");
+const levelToggle = document.getElementById("levelToggle");
+const activeLevelLabel = document.getElementById("activeLevelLabel");
 const shuffleBtn = document.getElementById("shuffleBtn");
 const logoutBtn = document.getElementById("logoutBtn");
 const manageBtn = document.getElementById("manageBtn");
@@ -9474,6 +9477,7 @@ function renderLevelTabs() {
   levelTabs.forEach(tab => {
     tab.classList.toggle("active", tab.dataset.level === activeLevel);
   });
+  if (activeLevelLabel) activeLevelLabel.textContent = levelLabels[activeLevel] || activeLevel;
 }
 function renderQuestion(options = {}) {
   const keepState = Boolean(options.keepState);
@@ -9857,6 +9861,11 @@ function renderResult(shouldSave = true) {
 
 levelTabs.forEach(tab => {
   tab.addEventListener("click", () => resetTest(tab.dataset.level));
+});
+levelToggle?.addEventListener("click", () => {
+  const isCollapsed = levelSelector.classList.toggle("collapsed");
+  levelToggle.setAttribute("aria-expanded", String(!isCollapsed));
+  levelToggle.querySelector(".level-toggle-action").textContent = isCollapsed ? "Розгорнути" : "Згорнути";
 });
 shuffleBtn.addEventListener("click", () => resetTest(activeLevel, true));
 manageBtn.addEventListener("click", openManager);

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>QA Interview</title>
   <link rel="icon" href="favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="interview.css?v=6" />
+  <link rel="stylesheet" href="interview.css?v=9" />
 </head>
 <body>
   <main class="interview-page">
@@ -26,8 +26,21 @@
           <div id="questionCategory">Інтерв'ю</div>
           <div id="questionCounter">0 / 0</div>
         </div>
-        <h1 id="questionText">Питань ще немає.</h1>
+        <div class="question-heading">
+          <h1 id="questionText">Питань ще немає.</h1>
+          <button id="showAnswerBtn" class="show-answer-action" type="button" aria-expanded="false" aria-controls="answerPanel" title="Показати відповідь">
+            <span aria-hidden="true">?</span>
+            <span class="sr-only">Показати відповідь</span>
+          </button>
+        </div>
         <div id="questionStatus" class="feedback hidden"></div>
+        <section id="answerPanel" class="answer-panel hidden" aria-live="polite">
+          <div class="answer-panel-heading">
+            <span class="answer-panel-icon" aria-hidden="true">✦</span>
+            <span>Відповідь</span>
+          </div>
+          <div id="answerText" class="answer-text"></div>
+        </section>
         <div class="interview-actions">
           <button id="knowBtn" class="primary-action know-action" type="button">Знаю</button>
           <button id="dontKnowBtn" class="secondary-action dont-know-action" type="button">Не знаю</button>
@@ -42,6 +55,6 @@
     </section>
   </main>
   <script src="data.js?v=supabase-1"></script>
-  <script src="interview.js?v=5"></script>
+  <script src="interview.js?v=9"></script>
 </body>
 </html>

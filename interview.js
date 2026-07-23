@@ -16,11 +16,15 @@ let currentQuestionIndex = -1;
 let seenQuestionIndexes = [];
 let unknownQuestionIndexes = [];
 let lastReviewUnknownIndexes = [];
+let selectedQuestionStatus = null;
 
 const questionCategory = document.getElementById("questionCategory");
 const questionCounter = document.getElementById("questionCounter");
 const questionText = document.getElementById("questionText");
 const questionStatus = document.getElementById("questionStatus");
+const answerPanel = document.getElementById("answerPanel");
+const answerText = document.getElementById("answerText");
+const showAnswerBtn = document.getElementById("showAnswerBtn");
 const knowBtn = document.getElementById("knowBtn");
 const dontKnowBtn = document.getElementById("dontKnowBtn");
 const reviewPanel = document.getElementById("reviewPanel");
@@ -176,14 +180,21 @@ function getNextRandomQuestionIndex() {
 function renderCurrentQuestion() {
   reviewPanel.classList.add("hidden");
   questionText.classList.remove("hidden");
+  showAnswerBtn.classList.remove("hidden");
   questionStatus.classList.add("hidden");
+  answerPanel.classList.add("hidden");
+  showAnswerBtn.setAttribute("aria-expanded", "false");
+  showAnswerBtn.title = "Показати відповідь";
   document.querySelector(".interview-actions").classList.remove("hidden");
+  selectedQuestionStatus = null;
 
   if (currentQuestionIndex < 0) {
     questionCategory.textContent = "Інтерв'ю";
     questionCounter.textContent = "0 / 0";
     questionText.textContent = "Питань ще немає.";
     questionStatus.classList.add("hidden");
+    answerPanel.classList.add("hidden");
+    showAnswerBtn.disabled = true;
     knowBtn.disabled = true;
     dontKnowBtn.disabled = true;
     return;
@@ -194,6 +205,7 @@ function renderCurrentQuestion() {
   questionCounter.textContent = `${seenQuestionIndexes.length} / ${questions.length}`;
   questionText.innerHTML = escapeHtml(question.question);
   questionStatus.classList.remove("error");
+  showAnswerBtn.disabled = false;
   knowBtn.disabled = false;
   dontKnowBtn.disabled = false;
 }
@@ -212,7 +224,9 @@ function renderReview() {
   questionCategory.textContent = "Результат інтерв'ю";
   questionCounter.textContent = `${questions.length} / ${questions.length}`;
   questionText.classList.add("hidden");
+  showAnswerBtn.classList.add("hidden");
   questionStatus.classList.add("hidden");
+  answerPanel.classList.add("hidden");
   document.querySelector(".interview-actions").classList.add("hidden");
   reviewPanel.classList.remove("hidden");
 
@@ -246,7 +260,38 @@ function markQuestion(status) {
   if (isDemoMode) demoStudyStatuses[getStudyStatusKey(question)] = status;
   if (status === "not-learned") unknownQuestionIndexes.push(currentQuestionIndex);
   saveQuestions();
+  selectedQuestionStatus = status;
 
+  const isKnown = status === "learned";
+  questionStatus.textContent = isKnown
+    ? "Чудово!"
+    : "Нічого страшного — повтори це питання пізніше.";
+  questionStatus.classList.toggle("error", !isKnown);
+  questionStatus.classList.remove("hidden");
+  knowBtn.disabled = true;
+  dontKnowBtn.disabled = true;
+  goToNextQuestion();
+}
+
+function toggleAnswer() {
+  if (currentQuestionIndex < 0) return;
+  const isHidden = answerPanel.classList.contains("hidden");
+
+  if (isHidden) {
+    const question = questions[currentQuestionIndex];
+    answerText.innerHTML = question.answer || "Відповідь для цього запитання ще готується.";
+    answerPanel.classList.remove("hidden");
+    showAnswerBtn.setAttribute("aria-expanded", "true");
+    showAnswerBtn.title = "Сховати відповідь";
+  } else {
+    answerPanel.classList.add("hidden");
+    showAnswerBtn.setAttribute("aria-expanded", "false");
+    showAnswerBtn.title = "Показати відповідь";
+  }
+}
+
+function goToNextQuestion() {
+  if (!selectedQuestionStatus) return;
   if (seenQuestionIndexes.length >= questions.length) {
     renderReview();
     return;
@@ -265,6 +310,7 @@ function restartInterview() {
 
 knowBtn.addEventListener("click", () => markQuestion("learned"));
 dontKnowBtn.addEventListener("click", () => markQuestion("not-learned"));
+showAnswerBtn.addEventListener("click", toggleAnswer);
 restartInterviewBtn.addEventListener("click", restartInterview);
 logoutBtn?.addEventListener("click", () => {
   localStorage.removeItem("qaShpargalkaSupabaseSession");
